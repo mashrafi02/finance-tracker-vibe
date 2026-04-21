@@ -49,9 +49,7 @@ cd finance-tracker
 # 2. Install dependencies
 pnpm install
 
-# 3. Copy environment variables
-cp .env.example .env
-# Edit .env with your values (see Environment variables below)
+# 3. create .env in the root and add your DATABASE_URL and JWT_SECRET
 
 # 4. Push the database schema
 pnpm drizzle-kit push
