@@ -1,36 +1,190 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Personal Finance Tracker
 
-## Getting Started
+> A web app to track income and expenses, manage budgets, and visualize spending.
+> Built with Next.js 14, TypeScript, custom JWT auth, Drizzle ORM, and Shadcn UI.
 
-First, run the development server:
+## Features
+
+- **Transaction tracking** — log income and expenses with categories, descriptions, and dates
+- **Category management** — create custom categories with color and emoji icon
+- **Budget management** — set monthly spending limits per category with progress indicators
+- **Analytics dashboard** — monthly bar chart, category breakdown, and spending trends
+- **Budget health score** — savings rate and at-a-glance financial health summary
+- **Secure authentication** — email and password auth with JWT stored in httpOnly cookies
+- **Dark mode** — full light and dark theme support via Tailwind CSS
+- **Gradient backgrounds** — subtle animated gradients for both light and dark modes
+
+## Tech stack
+
+| Concern | Technology |
+|---|---|
+| Framework | Next.js 16.2.4 (App Router, TypeScript) |
+| Styling | Tailwind CSS v4 + Shadcn UI (base-nova style) |
+| Authentication | Custom JWT (`jose`) stored in httpOnly cookies |
+| ORM | Drizzle ORM |
+| Database | PostgreSQL |
+| Migrations | Drizzle Kit |
+| Charts | Shadcn Charts (Recharts) |
+| Tables | TanStack Table |
+| Forms | React Hook Form + Zod |
+| State | SWR (data fetching and caching) |
+| Icons | Lucide React + Emoji Picker React |
+| Notifications | Sonner |
+
+## Getting started
+
+### Prerequisites
+
+- Node.js 18 or later
+- PostgreSQL (local or hosted — [Railway](https://railway.app), [Supabase](https://supabase.com), or [Neon](https://neon.tech) work well)
+- pnpm (recommended) or npm
+
+### Installation
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
+# 1. Clone the repository
+git clone https://github.com/your-username/finance-tracker.git
+cd finance-tracker
+
+# 2. Install dependencies
+pnpm install
+
+# 3. Copy environment variables
+cp .env.example .env
+# Edit .env with your values (see Environment variables below)
+
+# 4. Push the database schema
+pnpm drizzle-kit push
+
+# 5. (Optional) Seed with sample data
+pnpm tsx db/seed.ts
+
+# 6. Start the development server
 pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Environment variables
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Copy [.env.example](.env.example) to `.env` and fill in all values:
 
-## Learn More
+| Variable | Required | Description |
+|---|---|---|
+| `DATABASE_URL` | Yes | PostgreSQL connection string |
+| `JWT_SECRET` | Yes | Secret key for signing JWTs — minimum 32 characters |
 
-To learn more about Next.js, take a look at the following resources:
+Generate a secure `JWT_SECRET`:
+```bash
+openssl rand -base64 32
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Database
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+This app uses **Drizzle ORM** with **PostgreSQL**.
 
-## Deploy on Vercel
+Schema is defined in [db/schema.ts](db/schema.ts). Migrations are generated and applied with Drizzle Kit:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```bash
+# After changing db/schema.ts, generate a migration
+pnpm drizzle-kit generate
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+# Apply pending migrations
+pnpm drizzle-kit push
+
+# Open Drizzle Studio (visual database browser)
+pnpm drizzle-kit studio
+```
+
+### Schema overview
+
+| Table | Description |
+|---|---|
+| `users` | Registered accounts — email, bcrypt-hashed password, name, username |
+| `categories` | User-defined groupings with color and emoji icon |
+| `transactions` | Income and expense entries, linked to a category |
+| `budgets` | Monthly spending limits per category (one row per category per month) |
+
+## Authentication
+
+Authentication uses **custom JWT** — no NextAuth or third-party auth library.
+
+- Passwords are hashed with bcrypt (12 rounds)
+- JWTs are signed with HS256, expire after 7 days
+- Tokens are stored in an `httpOnly`, `Secure`, `SameSite=Strict` cookie
+- All dashboard routes and data API routes are protected by [middleware.ts](middleware.ts)
+- The user's identity in API routes always comes from the verified JWT payload — never from request parameters
+
+## API reference
+
+See [docs/api.md](./docs/api.md) for the full REST API documentation.
+
+## Project structure
+
+```
+├── app/
+│   ├── (auth)/           # Login and register pages (public)
+│   ├── (dashboard)/      # Protected dashboard pages and layouts
+│   └── api/              # REST API route handlers
+├── components/
+│   ├── ui/               # Shadcn UI primitives (auto-generated)
+│   ├── transactions/     # Transaction-specific components + TanStack Table
+│   ├── budgets/          # Budget components
+│   ├── categories/       # Category components with emoji picker
+│   ├── charts/           # Shadcn Chart wrappers
+│   ├── layout/           # Sidebar, header, mobile nav
+│   ├── profile/          # Profile management components
+│   └── theme/            # Theme provider and toggle
+├── db/
+│   ├── index.ts          # Drizzle client singleton
+│   ├── schema.ts         # All table definitions
+│   └── migrations/       # Auto-generated by drizzle-kit
+├── lib/
+│   ├── auth.ts           # JWT sign/verify/cookie helpers
+│   ├── validations/      # Zod schemas per domain
+│   └── utils.ts          # formatCurrency, formatDate, cn(), fetcher
+├── hooks/                # SWR data-fetching hooks
+├── middleware.ts         # JWT verification and route protection
+└── .github/agents/       # GitHub Copilot custom agent definitions
+```
+
+## Key pages and routes
+
+| Route | Description |
+|---|---|
+| [/](app/(dashboard)/page.tsx) | Dashboard — balance card, spending summary, income/expense chart, budget alerts |
+| [/transactions](app/(dashboard)/transactions/page.tsx) | Transaction list with filters, table, budget list |
+| [/categories](app/(dashboard)/categories/page.tsx) | Category management with color palette and emoji picker |
+| [/analytics](app/(dashboard)/analytics/page.tsx) | Monthly spending trends and category breakdown pie chart |
+| [/profile](app/(dashboard)/profile/page.tsx) | Profile settings — account info, name/password forms, delete account |
+| [/login](app/(auth)/login/page.tsx) | Public login page |
+| [/register](app/(auth)/register/page.tsx) | Public registration page |
+
+## Running tests
+
+```bash
+pnpm test                  # run all tests
+pnpm test:coverage         # run with coverage report
+```
+
+Coverage thresholds: 80% lines, 80% functions, 75% branches.
+
+## Design system
+
+- **Border radius** — global `--radius: 0.375rem` for soft rectangular shapes; buttons use fixed `1.25rem` for their pill-like feel
+- **Colors** — OKLCH color space for perceptually uniform gradients
+- **Gradient backgrounds** — multi-stop radial gradients (cool blue/peach/mint in light mode, indigo/magenta/teal in dark mode)
+- **Typography** — Poppins font family (300, 400, 500, 600, 700 weights)
+- **Animations** — Reveal component with staggered fade-up entrance
+
+## Contributing
+
+1. Pick a feature from the issues list
+2. Open Copilot Chat in VS Code and select the **Planner** agent
+3. Describe the feature — the Planner will read the codebase and produce an implementation plan
+4. Follow the agent handoff chain: Planner → Backend → Frontend → Testing → Security → Docs
+5. Open a pull request when all checks pass
+
+## License
+
+MIT
