@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Poppins } from "next/font/google";
 import { Toaster } from "sonner";
 import "./globals.css";
+import { ThemeProvider, themeInitScript } from "@/components/theme/theme-provider";
 
 const poppins = Poppins({
   variable: "--font-poppins",
@@ -21,10 +22,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${poppins.variable} h-full antialiased`}>
+    <html lang="en" className={`${poppins.variable} h-full antialiased`} suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
+      </head>
       <body className={`${poppins.className} min-h-full flex flex-col`}>
-        {children}
-        <Toaster richColors position="top-right" />
+        <ThemeProvider>
+          {children}
+          <Toaster richColors position="top-right" theme="system" />
+        </ThemeProvider>
       </body>
     </html>
   );

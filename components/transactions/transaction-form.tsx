@@ -13,6 +13,7 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
+import { InputGroup, InputGroupAddon, InputGroupInput, InputGroupText } from '@/components/ui/input-group'
 import { Button } from '@/components/ui/button'
 import {
   Select,
@@ -150,13 +151,20 @@ export function TransactionForm({
             <FormItem>
               <FormLabel>Amount</FormLabel>
               <FormControl>
-                <Input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  placeholder="0.00"
-                  {...field}
-                />
+                <InputGroup className="h-10 rounded-xl">
+                  <InputGroupAddon>
+                    <InputGroupText className="text-foreground">$</InputGroupText>
+                  </InputGroupAddon>
+                  <InputGroupInput
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    inputMode="decimal"
+                    placeholder="0.00"
+                    aria-invalid={Boolean(form.formState.errors.amount) || undefined}
+                    {...field}
+                  />
+                </InputGroup>
               </FormControl>
               <FormMessage />
             </FormItem>

@@ -17,6 +17,8 @@ import { Trash2, Save, Pencil, PiggyBank } from 'lucide-react'
 import { useBudgets, type BudgetStatus } from '@/hooks/use-budgets'
 import { formatCurrency, cn } from '@/lib/utils'
 import { toast } from 'sonner'
+import { Reveal } from '@/components/ui/reveal'
+import { EmptyState } from '@/components/ui/empty-state'
 
 // Generate month options for current and next month
 function getMonthOptions() {
@@ -359,23 +361,22 @@ export function BudgetList() {
 
       <div className="grid gap-4 lg:grid-cols-2">
         {budgets.length === 0 ? (
-          <Card>
-            <CardContent className="flex items-center justify-center py-8">
-              <div className="text-center">
-                <p className="text-sm font-medium text-muted-foreground">
-                  No categories found. Create some categories first to set budgets.
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        ) : (
-          budgets.map((budget) => (
-            <BudgetItem
-              key={budget.categoryId}
-              budget={budget}
-              onSave={handleSave}
-              onDelete={handleDelete}
+          <div className="lg:col-span-2">
+            <EmptyState
+              icon={<PiggyBank />}
+              title="No categories to budget"
+              description="Create some categories first so you can set monthly spending limits for them."
             />
+          </div>
+        ) : (
+          budgets.map((budget, i) => (
+            <Reveal key={budget.categoryId} delay={i * 40}>
+              <BudgetItem
+                budget={budget}
+                onSave={handleSave}
+                onDelete={handleDelete}
+              />
+            </Reveal>
           ))
         )}
       </div>

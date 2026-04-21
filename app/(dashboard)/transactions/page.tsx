@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { useTransactions, type TransactionWithCategory } from '@/hooks/use-transactions'
 import { useCategories } from '@/hooks/use-categories'
@@ -11,12 +11,14 @@ import { TransactionFilters } from '@/components/transactions/transaction-filter
 import { Card, CardContent } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { ReceiptText } from 'lucide-react'
+import { Reveal } from '@/components/ui/reveal'
 
 export default function TransactionsPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [sort, setSort] = useState('date.desc')
-  const [sheetOpen, setSheetOpen] = useState(false)
+  // Open the sheet immediately if the page lands with `?new=1`.
+  const [sheetOpen, setSheetOpen] = useState(() => searchParams.get('new') === '1')
   const [editingTransaction, setEditingTransaction] = useState<TransactionWithCategory | undefined>()
   const [deleteId, setDeleteId] = useState<string | null>(null)
 
@@ -37,6 +39,16 @@ export default function TransactionsPage() {
     ...filters,
   })
   const { categories, isLoading: categoriesLoading } = useCategories()
+
+  // Strip `?new=1` from the URL after it's consumed (the sheet opens via
+  // initial state above). We only touch the external router here — no setState.
+  useEffect(() => {
+    if (searchParams.get('new') !== '1') return
+    const params = new URLSearchParams(searchParams.toString())
+    params.delete('new')
+    const qs = params.toString()
+    router.replace(qs ? `/transactions?${qs}` : '/transactions')
+  }, [searchParams, router])
 
   const handlePageChange = (newPage: number) => {
     const params = new URLSearchParams(searchParams.toString())
@@ -90,7 +102,10 @@ export default function TransactionsPage() {
 
   return (
     <div className="space-y-7">
-      <section className="rounded-3xl border border-border/70 bg-card px-6 py-7 shadow-[0_12px_34px_rgba(0,0,0,0.04)] sm:px-8">
+      <Reveal
+        as="section"
+        className="rounded-3xl border border-border/70 bg-card px-6 py-7 shadow-[0_12px_34px_rgba(0,0,0,0.04)] sm:px-8"
+      >
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="flex items-start gap-4">
             <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-sm">
@@ -113,9 +128,9 @@ export default function TransactionsPage() {
             onSuccess={handleSuccess}
           />
         </div>
-      </section>
+      </Reveal>
 
-      <div className="space-y-5">
+      <Reveal delay={80} className="space-y-5">
         <TransactionFilters categories={categories} />
 
         <TransactionsTable
@@ -130,7 +145,7 @@ export default function TransactionsPage() {
           onDelete={setDeleteId}
           isLoading={isLoading}
         />
-      </div>
+      </Reveal>
 
       {/* Edit Sheet */}
       {editingTransaction && (
