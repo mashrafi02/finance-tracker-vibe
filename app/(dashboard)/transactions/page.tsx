@@ -8,7 +8,9 @@ import { TransactionsTable } from '@/components/transactions/transactions-table'
 import { TransactionSheet, NewTransactionButton } from '@/components/transactions/transaction-sheet'
 import { DeleteTransactionDialog } from '@/components/transactions/delete-transaction-dialog'
 import { TransactionFilters } from '@/components/transactions/transaction-filters'
+import { BudgetList } from '@/components/budgets/budget-list'
 import { Card, CardContent } from '@/components/ui/card'
+import { Separator } from '@/components/ui/separator'
 import { Skeleton } from '@/components/ui/skeleton'
 import { ReceiptText } from 'lucide-react'
 import { Reveal } from '@/components/ui/reveal'
@@ -145,6 +147,12 @@ export default function TransactionsPage() {
           onDelete={setDeleteId}
           isLoading={isLoading}
         />
+      </Reveal>
+
+      <Separator className="opacity-50" />
+
+      <Reveal delay={120}>
+        <BudgetList />
       </Reveal>
 
       {/* Edit Sheet */}

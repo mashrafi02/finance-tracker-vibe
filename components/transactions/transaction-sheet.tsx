@@ -3,12 +3,12 @@
 import { Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-} from '@/components/ui/sheet'
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { TransactionForm } from './transaction-form'
 import type { Category } from '@/db/schema'
 import type { TransactionWithCategory } from '@/hooks/use-transactions'
@@ -36,28 +36,26 @@ export function TransactionSheet({
   }
 
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="overflow-y-auto sm:max-w-lg">
-        <SheetHeader>
-          <SheetTitle>
-            {isEditing ? 'Edit Transaction' : 'Add Transaction'}
-          </SheetTitle>
-          <SheetDescription>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-h-[90vh] overflow-y-auto p-6 sm:max-w-2xl">
+        <DialogHeader className="mb-2">
+          <DialogTitle className="text-lg">
+            {isEditing ? 'Edit transaction' : 'Add transaction'}
+          </DialogTitle>
+          <DialogDescription>
             {isEditing
-              ? 'Make changes to your transaction here.'
-              : 'Add a new income or expense transaction.'}
-          </SheetDescription>
-        </SheetHeader>
-        <div className="mt-6 rounded-2xl border border-border/70 bg-muted/15 p-4">
-          <TransactionForm
-            categories={categories}
-            transaction={transaction}
-            onSuccess={handleSuccess}
-            onCancel={() => onOpenChange(false)}
-          />
-        </div>
-      </SheetContent>
-    </Sheet>
+              ? 'Update the details of this transaction.'
+              : 'Record a new income or expense transaction.'}
+          </DialogDescription>
+        </DialogHeader>
+        <TransactionForm
+          categories={categories}
+          transaction={transaction}
+          onSuccess={handleSuccess}
+          onCancel={() => onOpenChange(false)}
+        />
+      </DialogContent>
+    </Dialog>
   )
 }
 

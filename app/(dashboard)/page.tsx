@@ -2,7 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { getAuthUser } from '@/lib/auth'
 import { db } from '@/db'
-import { transactions, categories } from '@/db/schema'
+import { transactions, categories, budgets } from '@/db/schema'
 import { and, eq, gte, lt, desc, sql } from 'drizzle-orm'
 import { formatCurrency, formatDate, cn } from '@/lib/utils'
 import Link from 'next/link'
@@ -129,7 +129,17 @@ export default async function DashboardPage() {
 
   const income = Number(summary?.totalIncome ?? 0)
   const expense = Number(summary?.totalExpense ?? 0)
-  const balance = income - expense
+  
+  // Get sum of all budget limits for current month (YYYY-MM format)
+  const currentMonth = now.toISOString().slice(0, 7)
+  const [budgetTotal] = await db
+    .select({
+      total: sql<string>`COALESCE(SUM(${budgets.limit}), 0)`,
+    })
+    .from(budgets)
+    .where(and(eq(budgets.userId, user.userId), eq(budgets.month, currentMonth)))
+  
+  const balance = Number(budgetTotal?.total ?? 0)
 
   const curIncome = Number(currentWindow?.income ?? 0)
   const curExpense = Number(currentWindow?.expense ?? 0)
@@ -138,9 +148,20 @@ export default async function DashboardPage() {
   const prevExpense = Number(prevWindow?.expense ?? 0)
   const prevBalance = prevIncome - prevExpense
 
+  // Get previous month's budget total for delta comparison
+  const prevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString().slice(0, 7)
+  const [prevBudgetTotal] = await db
+    .select({
+      total: sql<string>`COALESCE(SUM(${budgets.limit}), 0)`,
+    })
+    .from(budgets)
+    .where(and(eq(budgets.userId, user.userId), eq(budgets.month, prevMonth)))
+  
+  const prevBudgetSum = Number(prevBudgetTotal?.total ?? 0)
+
   const incomeDelta = pctDelta(curIncome, prevIncome)
   const expenseDelta = pctDelta(curExpense, prevExpense)
-  const balanceDelta = pctDelta(curBalance, prevBalance)
+  const balanceDelta = pctDelta(balance, prevBudgetSum)
 
   const recentTransactions = await db
     .select({
@@ -193,15 +214,16 @@ export default async function DashboardPage() {
                 <span
                   className={cn(
                     'text-[1.85rem] font-semibold tracking-tight tabular-nums',
-                    balance >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400',
+                    'text-emerald-600 dark:text-emerald-400',
                   )}
                 >
                   {formatCurrency(balance)}
                 </span>
                 <DeltaChip delta={balanceDelta} positiveIsGood />
               </div>
-              <Sparkline data={balanceSpark} colorClass={balance >= 0 ? 'text-emerald-500/80' : 'text-red-500/80'} />
-              <p className="text-xs font-medium text-muted-foreground">vs. previous 30 days</p>
+              <p className="text-xs font-medium text-muted-foreground">
+                Total budget limits • {new Intl.DateTimeFormat('en-US', { month: 'long', year: 'numeric' }).format(now)}
+              </p>
             </CardContent>
           </Card>
         </Reveal>

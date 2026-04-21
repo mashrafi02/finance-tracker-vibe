@@ -2,6 +2,7 @@ import {
   ChartColumn,
   LayoutDashboard,
   ReceiptText,
+  Tags,
   UserRound,
   type LucideIcon,
 } from 'lucide-react'
@@ -22,6 +23,11 @@ export const navItems: NavItem[] = [
     title: 'Transactions',
     href: '/transactions',
     icon: ReceiptText,
+  },
+  {
+    title: 'Categories',
+    href: '/categories',
+    icon: Tags,
   },
   {
     title: 'Analytics',

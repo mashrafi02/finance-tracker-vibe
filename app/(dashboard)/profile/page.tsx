@@ -1,7 +1,8 @@
 'use client'
 
-import { CategoriesTable } from '@/components/categories/categories-table'
-import { BudgetList } from '@/components/budgets/budget-list'
+import { UpdateNameForm } from '@/components/profile/update-name-form'
+import { ChangePasswordForm } from '@/components/profile/change-password-form'
+import { DeleteAccountSection } from '@/components/profile/delete-account-section'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -16,20 +17,8 @@ interface AuthUser {
   name: string
 }
 
-interface Category {
-  id: string
-  name: string
-  color: string
-  icon: string
-  userId: string
-}
-
 export default function ProfilePage() {
   const { data: user, isLoading: userLoading } = useSWR<AuthUser>('/api/auth/me', fetcher)
-  const { data: categories = [], isLoading: categoriesLoading } = useSWR<Category[]>(
-    user ? '/api/categories' : null,
-    fetcher
-  )
 
   if (userLoading) {
     return <ProfilePageSkeleton />
@@ -50,7 +39,7 @@ export default function ProfilePage() {
           <div>
             <h1 className="text-3xl font-semibold tracking-tight">Profile</h1>
             <p className="mt-1 text-sm font-medium text-muted-foreground">
-              Manage your account settings, categories, and budgets.
+              Manage your account settings.
             </p>
           </div>
         </div>
@@ -69,65 +58,37 @@ export default function ProfilePage() {
               <dt className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Email</dt>
               <dd className="mt-1 text-sm font-semibold tracking-tight">{user.email}</dd>
             </div>
+            <div className="rounded-xl border border-border/70 bg-muted/20 px-4 py-3">
+              <dt className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Username</dt>
+              <dd className="mt-1 text-sm font-semibold tracking-tight">{user.username}</dd>
+            </div>
           </dl>
         </CardContent>
       </Card>
 
-      <div>
-        <BudgetList />
+      <div className="grid gap-6 lg:grid-cols-2">
+        <UpdateNameForm initialName={user.name} />
+        <ChangePasswordForm />
       </div>
 
       <Separator className="opacity-50" />
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Categories</CardTitle>
-          <CardDescription>
-            Manage the categories you use to organize your transactions. You can create
-            custom categories or edit the default ones.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {categoriesLoading ? (
-            <CategoriesTableSkeleton />
-          ) : (
-            <CategoriesTable initialData={categories} />
-          )}
-        </CardContent>
-      </Card>
+      <DeleteAccountSection />
     </div>
   )
 }
 
 function ProfilePageSkeleton() {
   return (
-    <div className="space-y-8">
-      <div>
-        <Skeleton className="h-8 w-48" />
-        <Skeleton className="mt-2 h-4 w-96" />
+    <div className="space-y-7">
+      <Skeleton className="h-24 rounded-3xl" />
+      <Skeleton className="h-32 rounded-xl" />
+      <div className="grid gap-6 lg:grid-cols-2">
+        <Skeleton className="h-56 rounded-xl" />
+        <Skeleton className="h-56 rounded-xl" />
       </div>
-      <Card>
-        <CardHeader>
-          <Skeleton className="h-6 w-24" />
-          <Skeleton className="h-4 w-48" />
-        </CardHeader>
-        <CardContent>
-          <Skeleton className="h-4 w-64" />
-        </CardContent>
-      </Card>
+      <Skeleton className="h-72 rounded-xl" />
     </div>
   )
 }
 
-function CategoriesTableSkeleton() {
-  return (
-    <div className="space-y-4">
-      <Skeleton className="h-10 w-full" />
-      <div className="space-y-2">
-        {Array.from({ length: 3 }).map((_, i) => (
-          <Skeleton key={i} className="h-12 w-full" />
-        ))}
-      </div>
-    </div>
-  )
-}

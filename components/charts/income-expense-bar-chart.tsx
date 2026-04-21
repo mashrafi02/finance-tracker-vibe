@@ -73,7 +73,7 @@ function formatPeriodLabel(period: string, range: Range): string {
 }
 
 export function IncomeExpenseBarChart() {
-  const [range, setRange] = useState<Range>('monthly')
+  const [range, setRange] = useState<Range>('weekly')
 
   const { data, error, isLoading } = useSWR<SummaryResponse>(
     `/api/analytics/summary?range=${range}`,

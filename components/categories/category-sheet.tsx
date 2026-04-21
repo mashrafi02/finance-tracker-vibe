@@ -3,12 +3,12 @@
 import { useState } from 'react'
 import { toast } from 'sonner'
 import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-} from '@/components/ui/sheet'
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { CategoryForm } from './category-form'
 import type { Category } from '@/db/schema'
 
@@ -60,25 +60,25 @@ export function CategorySheet({
   }
 
   return (
-    <Sheet open={isOpen} onOpenChange={onOpenChange}>
-      <SheetContent className="overflow-y-auto sm:max-w-lg">
-        <SheetHeader>
-          <SheetTitle>{isEditing ? 'Edit Category' : 'New Category'}</SheetTitle>
-          <SheetDescription>
+    <Dialog open={isOpen} onOpenChange={onOpenChange}>
+      <DialogContent className="max-h-[90vh] overflow-y-auto p-6 sm:max-w-xl">
+        <DialogHeader className="mb-2">
+          <DialogTitle className="text-lg">
+            {isEditing ? 'Edit category' : 'New category'}
+          </DialogTitle>
+          <DialogDescription>
             {isEditing
               ? 'Update the category details below.'
               : 'Create a new category to organize your transactions.'}
-          </SheetDescription>
-        </SheetHeader>
-        <div className="mt-6 rounded-2xl border border-border/70 bg-muted/15 p-4">
-          <CategoryForm
-            category={category}
-            onSubmit={handleSubmit}
-            onCancel={() => onOpenChange(false)}
-            isSubmitting={isSubmitting}
-          />
-        </div>
-      </SheetContent>
-    </Sheet>
+          </DialogDescription>
+        </DialogHeader>
+        <CategoryForm
+          category={category}
+          onSubmit={handleSubmit}
+          onCancel={() => onOpenChange(false)}
+          isSubmitting={isSubmitting}
+        />
+      </DialogContent>
+    </Dialog>
   )
 }
