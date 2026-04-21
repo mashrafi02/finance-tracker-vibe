@@ -67,7 +67,7 @@ Open [http://localhost:3000](http://localhost:3000).
 
 ## Environment variables
 
-Copy [.env.example](.env.example) to `.env` and fill in all values:
+create .env in the root
 
 | Variable | Required | Description |
 |---|---|---|
