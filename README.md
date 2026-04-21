@@ -1,7 +1,7 @@
 # Personal Finance Tracker
 
 > A web app to track income and expenses, manage budgets, and visualize spending.
-> Built with Next.js 14, TypeScript, custom JWT auth, Drizzle ORM, and Shadcn UI.
+> Built with Next.js 16, TypeScript, custom JWT auth, Drizzle ORM, and Shadcn UI.
 
 ## Features
 
