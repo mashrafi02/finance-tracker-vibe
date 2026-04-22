@@ -49,15 +49,16 @@ export async function GET(req: NextRequest) {
         categoryId: budgets.categoryId,
         budgetId: budgets.id,
         limit: budgets.limit,
+        type: budgets.type,
       })
       .from(budgets)
       .where(and(eq(budgets.userId, user.userId), eq(budgets.month, month)))
 
-    // 6. Calculate spending per category for this month
-    const spendingData = await db
+    // 6. Calculate expense and income totals per category for this month
+    const expenseData = await db
       .select({
         categoryId: transactions.categoryId,
-        spent: sum(transactions.amount),
+        total: sum(transactions.amount),
       })
       .from(transactions)
       .where(
@@ -70,13 +71,32 @@ export async function GET(req: NextRequest) {
       )
       .groupBy(transactions.categoryId)
 
-    // 7. Combine all data
-    const budgetStatus = userCategories.map((category) => {
-      const budget = userBudgets.find((b) => b.categoryId === category.id)
-      const spending = spendingData.find((s) => s.categoryId === category.id)
+    const incomeData = await db
+      .select({
+        categoryId: transactions.categoryId,
+        total: sum(transactions.amount),
+      })
+      .from(transactions)
+      .where(
+        and(
+          eq(transactions.userId, user.userId),
+          eq(transactions.type, 'INCOME'),
+          gte(transactions.date, startDate),
+          lte(transactions.date, endDate)
+        )
+      )
+      .groupBy(transactions.categoryId)
+
+    // 7. Combine — build SPENDING and INCOME_GOAL rows for every category
+    const spendingBudgets = userCategories.map((category) => {
+      const budget = userBudgets.find(
+        (b) => b.categoryId === category.id && b.type === 'SPENDING',
+      )
+      const spent = Number(
+        expenseData.find((s) => s.categoryId === category.id)?.total ?? 0,
+      )
 
       const limit = budget ? Number(budget.limit) : null
-      const spent = spending ? Number(spending.spent) : 0
       const remaining = limit !== null ? limit - spent : null
       const isOverspent = limit !== null && spent > limit
 
@@ -86,15 +106,52 @@ export async function GET(req: NextRequest) {
         categoryIcon: category.icon,
         categoryColor: category.color,
         budgetId: budget?.budgetId ?? null,
+        type: 'SPENDING' as const,
         limit,
         spent,
         remaining,
         isOverspent,
-        percentageUsed: limit !== null && limit > 0 ? Math.round((spent / limit) * 100) : null,
+        percentageUsed:
+          limit !== null && limit > 0 ? Math.round((spent / limit) * 100) : null,
       }
     })
 
-    return Response.json({ budgets: budgetStatus, month })
+    const incomeGoals = userCategories.map((category) => {
+      const budget = userBudgets.find(
+        (b) => b.categoryId === category.id && b.type === 'INCOME_GOAL',
+      )
+      const earned = Number(
+        incomeData.find((s) => s.categoryId === category.id)?.total ?? 0,
+      )
+
+      const goal = budget ? Number(budget.limit) : null
+      const remaining = goal !== null ? Math.max(0, goal - earned) : null
+      const isComplete = goal !== null && earned >= goal
+
+      return {
+        categoryId: category.id,
+        categoryName: category.name,
+        categoryIcon: category.icon,
+        categoryColor: category.color,
+        budgetId: budget?.budgetId ?? null,
+        type: 'INCOME_GOAL' as const,
+        limit: goal,
+        spent: earned, // reuse "spent" field name to mean "progress toward goal"
+        remaining,
+        isOverspent: false,
+        isComplete,
+        percentageUsed:
+          goal !== null && goal > 0 ? Math.round((earned / goal) * 100) : null,
+      }
+    })
+
+    // Keep legacy "budgets" key for existing callers (points to spendingBudgets)
+    return Response.json({
+      budgets: spendingBudgets,
+      spendingBudgets,
+      incomeGoals,
+      month,
+    })
   } catch (error) {
     console.error('[GET /api/budgets]', error)
     return Response.json({ error: 'Internal server error' }, { status: 500 })
@@ -118,7 +175,7 @@ export async function POST(req: Request) {
     )
   }
 
-  const { categoryId, limit, month } = result.data
+  const { categoryId, limit, month, type } = result.data
 
   try {
     // 3. Verify category exists and belongs to user
@@ -136,7 +193,7 @@ export async function POST(req: Request) {
       return Response.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    // 4. Upsert budget — insert or update if exists
+    // 4. Upsert budget — insert or update if exists (scoped by type)
     const [budget] = await db
       .insert(budgets)
       .values({
@@ -144,9 +201,10 @@ export async function POST(req: Request) {
         categoryId,
         limit: limit.toString(),
         month,
+        type,
       })
       .onConflictDoUpdate({
-        target: [budgets.userId, budgets.categoryId, budgets.month],
+        target: [budgets.userId, budgets.categoryId, budgets.month, budgets.type],
         set: { limit: limit.toString() },
       })
       .returning()

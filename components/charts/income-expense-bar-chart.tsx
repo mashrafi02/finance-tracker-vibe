@@ -50,11 +50,11 @@ interface SummaryResponse {
 const chartConfig = {
   income: {
     label: 'Income',
-    color: 'hsl(158, 64%, 42%)',
+    color: 'var(--chart-3)',
   },
   expense: {
     label: 'Expenses',
-    color: 'hsl(356, 71%, 56%)',
+    color: 'var(--chart-1)',
   },
 } satisfies ChartConfig
 
@@ -90,13 +90,13 @@ export function IncomeExpenseBarChart() {
     <Card>
       <CardHeader className="flex flex-col gap-4 pb-2 sm:flex-row sm:items-center sm:justify-between">
         <div className="space-y-1">
-          <CardTitle>Income vs. Expenses</CardTitle>
-          <CardDescription>
-            A summary of your income and expenses over time.
+          <CardTitle className="text-base">Income vs. Expenses</CardTitle>
+          <CardDescription className="text-xs">
+            Summary of income and expenses over time
           </CardDescription>
         </div>
         <Select value={range} onValueChange={(value) => value && setRange(value as Range)}>
-          <SelectTrigger className="w-full sm:w-[180px]">
+          <SelectTrigger className="h-9 w-full rounded-lg sm:w-[150px]">
             <SelectValue placeholder="Select range" />
           </SelectTrigger>
           <SelectContent>
@@ -124,29 +124,27 @@ export function IncomeExpenseBarChart() {
             </p>
           </div>
         ) : (
-          <ChartContainer config={chartConfig} className="h-[300px] w-full rounded-2xl bg-muted/15 p-2">
-            <BarChart data={chartData} margin={{ top: 5, right: 10, left: 10, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
+          <ChartContainer config={chartConfig} className="h-[300px] w-full">
+            <BarChart data={chartData} margin={{ top: 8, right: 12, left: 0, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="var(--border)" />
               <XAxis
                 dataKey="period"
                 tickLine={false}
                 axisLine={false}
-                tickMargin={8}
-                tick={{ fontSize: 12 }}
+                tickMargin={10}
+                tick={{ fontSize: 11, fill: 'var(--muted-foreground)' }}
               />
               <YAxis
                 tickLine={false}
                 axisLine={false}
                 tickMargin={8}
-                tick={{ fontSize: 12 }}
+                tick={{ fontSize: 11, fill: 'var(--muted-foreground)' }}
                 tickFormatter={(value) => `$${value}`}
               />
-              <ChartTooltip
-                content={<ChartTooltipContent />}
-              />
+              <ChartTooltip content={<ChartTooltipContent />} />
               <ChartLegend content={<ChartLegendContent />} />
-              <Bar dataKey="income" fill="var(--color-income)" radius={[4, 4, 0, 0]} />
-              <Bar dataKey="expense" fill="var(--color-expense)" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="income" fill="var(--chart-3)" radius={[6, 6, 0, 0]} />
+              <Bar dataKey="expense" fill="var(--chart-1)" radius={[6, 6, 0, 0]} />
             </BarChart>
           </ChartContainer>
         )}

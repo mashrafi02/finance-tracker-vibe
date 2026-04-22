@@ -1,6 +1,7 @@
 import {
   ChartColumn,
   LayoutDashboard,
+  PiggyBank,
   ReceiptText,
   Tags,
   UserRound,
@@ -11,32 +12,19 @@ export interface NavItem {
   title: string
   href: string
   icon: LucideIcon
+  section: 'menu' | 'account'
 }
 
 export const navItems: NavItem[] = [
-  {
-    title: 'Dashboard',
-    href: '/',
-    icon: LayoutDashboard,
-  },
-  {
-    title: 'Transactions',
-    href: '/transactions',
-    icon: ReceiptText,
-  },
-  {
-    title: 'Categories',
-    href: '/categories',
-    icon: Tags,
-  },
-  {
-    title: 'Analytics',
-    href: '/analytics',
-    icon: ChartColumn,
-  },
-  {
-    title: 'Profile',
-    href: '/profile',
-    icon: UserRound,
-  },
+  { title: 'Dashboard',         href: '/',                   icon: LayoutDashboard, section: 'menu' },
+  { title: 'Transactions',      href: '/transactions',       icon: ReceiptText,     section: 'menu' },
+  { title: 'Categories',        href: '/categories',         icon: Tags,            section: 'menu' },
+  { title: 'Budget management', href: '/budget-management',  icon: PiggyBank,       section: 'menu' },
+  { title: 'Analytics',         href: '/analytics',          icon: ChartColumn,     section: 'menu' },
+  { title: 'Profile',      href: '/profile',      icon: UserRound,       section: 'account' },
+]
+
+export const navSections: { id: 'menu' | 'account'; label: string }[] = [
+  { id: 'menu',    label: 'Menu' },
+  { id: 'account', label: 'Account' },
 ]

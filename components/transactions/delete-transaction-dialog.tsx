@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { toast } from 'sonner'
+import { useSWRConfig } from 'swr'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -28,6 +29,7 @@ export function DeleteTransactionDialog({
   onSuccess,
 }: DeleteTransactionDialogProps) {
   const [isDeleting, setIsDeleting] = useState(false)
+  const { mutate: globalMutate } = useSWRConfig()
 
   async function handleDelete() {
     if (!transactionId) return
@@ -45,6 +47,14 @@ export function DeleteTransactionDialog({
       }
 
       toast.success('Transaction deleted')
+      globalMutate(
+        (key) =>
+          typeof key === 'string' &&
+          (key.startsWith('/api/budgets') ||
+            key.startsWith('/api/summary') ||
+            key.startsWith('/api/analytics') ||
+            key.startsWith('/api/transactions')),
+      )
       onOpenChange(false)
       onSuccess()
     } catch {

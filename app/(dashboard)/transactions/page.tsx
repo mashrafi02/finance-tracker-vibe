@@ -8,11 +8,8 @@ import { TransactionsTable } from '@/components/transactions/transactions-table'
 import { TransactionSheet, NewTransactionButton } from '@/components/transactions/transaction-sheet'
 import { DeleteTransactionDialog } from '@/components/transactions/delete-transaction-dialog'
 import { TransactionFilters } from '@/components/transactions/transaction-filters'
-import { BudgetList } from '@/components/budgets/budget-list'
 import { Card, CardContent } from '@/components/ui/card'
-import { Separator } from '@/components/ui/separator'
 import { Skeleton } from '@/components/ui/skeleton'
-import { ReceiptText } from 'lucide-react'
 import { Reveal } from '@/components/ui/reveal'
 
 export default function TransactionsPage() {
@@ -103,36 +100,26 @@ export default function TransactionsPage() {
   }
 
   return (
-    <div className="space-y-7">
-      <Reveal
-        as="section"
-        className="rounded-3xl border border-border/70 bg-card px-6 py-7 shadow-[0_12px_34px_rgba(0,0,0,0.04)] sm:px-8"
-      >
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div className="flex items-start gap-4">
-            <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-sm">
-              <ReceiptText className="h-5 w-5" />
-            </span>
-            <div>
-              <h1 className="text-3xl font-semibold tracking-tight">Transactions</h1>
-              <p className="mt-1 text-sm font-medium text-muted-foreground">
-                View and manage your income and expenses.
-              </p>
-            </div>
-          </div>
-          <NewTransactionButton
-            categories={categories}
-            open={sheetOpen && !editingTransaction}
-            onOpenChange={(open) => {
-              if (!open) setEditingTransaction(undefined)
-              setSheetOpen(open)
-            }}
-            onSuccess={handleSuccess}
-          />
+    <div className="space-y-6">
+      <Reveal as="section" className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h2 className="text-2xl font-semibold tracking-tight sm:text-[28px]">Transactions</h2>
+          <p className="mt-1 text-sm font-medium text-muted-foreground">
+            View and manage your income and expenses.
+          </p>
         </div>
+        <NewTransactionButton
+          categories={categories}
+          open={sheetOpen && !editingTransaction}
+          onOpenChange={(open) => {
+            if (!open) setEditingTransaction(undefined)
+            setSheetOpen(open)
+          }}
+          onSuccess={handleSuccess}
+        />
       </Reveal>
 
-      <Reveal delay={80} className="space-y-5">
+      <Reveal delay={60} className="space-y-5">
         <TransactionFilters categories={categories} />
 
         <TransactionsTable
@@ -147,12 +134,6 @@ export default function TransactionsPage() {
           onDelete={setDeleteId}
           isLoading={isLoading}
         />
-      </Reveal>
-
-      <Separator className="opacity-50" />
-
-      <Reveal delay={120}>
-        <BudgetList />
       </Reveal>
 
       {/* Edit Sheet */}

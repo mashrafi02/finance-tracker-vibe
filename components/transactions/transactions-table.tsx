@@ -183,6 +183,7 @@ export function TransactionsTable({
       },
       {
         id: 'actions',
+        header: 'Actions',
         enableHiding: false,
         cell: ({ row }) => (
           <DropdownMenu>
@@ -247,7 +248,7 @@ export function TransactionsTable({
             className={cn(
               'inline-flex h-8 items-center gap-1.5 rounded-[calc(var(--radius)*0.75)] px-2.5 text-xs font-medium transition-colors',
               density === 'comfortable'
-                ? 'bg-muted text-foreground'
+                ? 'bg-muted text-foreground rounded-full'
                 : 'text-muted-foreground hover:text-foreground',
             )}
           >
@@ -261,7 +262,7 @@ export function TransactionsTable({
             className={cn(
               'inline-flex h-8 items-center gap-1.5 rounded-[calc(var(--radius)*0.75)] px-2.5 text-xs font-medium transition-colors',
               density === 'compact'
-                ? 'bg-muted text-foreground'
+                ? 'bg-muted text-foreground rounded-full'
                 : 'text-muted-foreground hover:text-foreground',
             )}
           >
@@ -387,13 +388,12 @@ export function TransactionsTable({
 
       {/* Desktop table — md and up */}
       <div className="hidden overflow-hidden rounded-2xl border border-border/80 bg-card md:block">
-        <div className="max-h-[calc(100vh-20rem)] overflow-auto">
-          <Table>
-            <TableHeader className="sticky top-0 z-10 bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80 [&_tr]:border-b [&_tr]:shadow-[inset_0_-1px_0_var(--border)]">
+        <Table>
+            <TableHeader className="[&_tr]:border-b [&_tr]:shadow-[inset_0_-1px_0_var(--border)] [&_th]:h-14">
               {table.getHeaderGroups().map((headerGroup) => (
                 <TableRow key={headerGroup.id}>
                   {headerGroup.headers.map((header) => (
-                    <TableHead key={header.id}>
+                    <TableHead key={header.id} className="first:pl-12">
                       {header.isPlaceholder
                         ? null
                         : flexRender(
@@ -410,7 +410,7 @@ export function TransactionsTable({
                 table.getRowModel().rows.map((row) => (
                   <TableRow key={row.id}>
                     {row.getVisibleCells().map((cell) => (
-                      <TableCell key={cell.id} className={cn(cellPad, rowPad)}>
+                      <TableCell key={cell.id} className={cn(cellPad, rowPad, 'first:pl-12')}>
                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
                       </TableCell>
                     ))}
@@ -430,7 +430,6 @@ export function TransactionsTable({
               )}
             </TableBody>
           </Table>
-        </div>
       </div>
 
       {/* Pagination */}

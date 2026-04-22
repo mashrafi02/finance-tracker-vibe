@@ -4,6 +4,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { toast } from 'sonner'
+import { useSWRConfig } from 'swr'
 import {
   Form,
   FormControl,
@@ -55,6 +56,7 @@ export function TransactionForm({
   onCancel,
 }: TransactionFormProps) {
   const isEditing = Boolean(transaction)
+  const { mutate: globalMutate } = useSWRConfig()
 
   // Parse note from description if editing (note is stored as "description | note")
   const parseDescriptionAndNote = (desc: string) => {
@@ -106,6 +108,15 @@ export function TransactionForm({
       }
 
       toast.success(isEditing ? 'Transaction updated' : 'Transaction added')
+      // Revalidate all derived caches that depend on transactions
+      globalMutate(
+        (key) =>
+          typeof key === 'string' &&
+          (key.startsWith('/api/budgets') ||
+            key.startsWith('/api/summary') ||
+            key.startsWith('/api/analytics') ||
+            key.startsWith('/api/transactions')),
+      )
       onSuccess()
     } catch {
       toast.error('Failed to save. Please try again.')

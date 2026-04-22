@@ -10,7 +10,7 @@ import {
   ArrowRight,
   ArrowUpRight,
   ArrowDownRight,
-  CircleDollarSign,
+  CalendarDays,
   Minus,
   TrendingDown,
   TrendingUp,
@@ -33,7 +33,7 @@ function pctDelta(current: number, previous: number): number | null {
 function DeltaChip({ delta, positiveIsGood = true }: { delta: number | null; positiveIsGood?: boolean }) {
   if (delta === null) {
     return (
-      <span className="inline-flex items-center gap-1 rounded-full border border-border/70 bg-muted/40 px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
+      <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[11px] font-semibold text-muted-foreground">
         <Minus className="h-3 w-3" /> new
       </span>
     )
@@ -46,10 +46,10 @@ function DeltaChip({ delta, positiveIsGood = true }: { delta: number | null; pos
   return (
     <span
       className={cn(
-        'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold tabular-nums',
-        flat && 'border border-border/70 bg-muted/40 text-muted-foreground',
-        !flat && good && 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300',
-        !flat && !good && 'bg-red-100 text-red-700 dark:bg-red-500/15 dark:text-red-300',
+        'inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 text-[11px] font-semibold tabular-nums',
+        flat && 'bg-muted text-muted-foreground',
+        !flat && good && 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300',
+        !flat && !good && 'bg-rose-50 text-rose-700 dark:bg-rose-500/15 dark:text-rose-300',
       )}
     >
       <Icon className="h-3 w-3" />
@@ -62,10 +62,9 @@ export default async function DashboardPage() {
   const user = await getAuthUser()
   if (!user) return null
 
-  // Date windows for delta + sparkline.
   const now = new Date()
   const startToday = new Date(now.getFullYear(), now.getMonth(), now.getDate())
-  const windowStart = new Date(startToday.getTime() - 29 * MS_DAY) // last 30 days incl today
+  const windowStart = new Date(startToday.getTime() - 29 * MS_DAY)
   const prevWindowStart = new Date(startToday.getTime() - 59 * MS_DAY)
 
   const [summary] = await db
@@ -98,7 +97,6 @@ export default async function DashboardPage() {
       ),
     )
 
-  // Daily aggregates for sparklines (last 30 days).
   const dailyRows = await db
     .select({
       day: sql<string>`DATE(${transactions.date})`,
@@ -129,8 +127,7 @@ export default async function DashboardPage() {
 
   const income = Number(summary?.totalIncome ?? 0)
   const expense = Number(summary?.totalExpense ?? 0)
-  
-  // Get sum of all budget limits for current month (YYYY-MM format)
+
   const currentMonth = now.toISOString().slice(0, 7)
   const [budgetTotal] = await db
     .select({
@@ -138,17 +135,14 @@ export default async function DashboardPage() {
     })
     .from(budgets)
     .where(and(eq(budgets.userId, user.userId), eq(budgets.month, currentMonth)))
-  
+
   const balance = Number(budgetTotal?.total ?? 0)
 
   const curIncome = Number(currentWindow?.income ?? 0)
   const curExpense = Number(currentWindow?.expense ?? 0)
-  const curBalance = curIncome - curExpense
   const prevIncome = Number(prevWindow?.income ?? 0)
   const prevExpense = Number(prevWindow?.expense ?? 0)
-  const prevBalance = prevIncome - prevExpense
 
-  // Get previous month's budget total for delta comparison
   const prevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString().slice(0, 7)
   const [prevBudgetTotal] = await db
     .select({
@@ -156,7 +150,7 @@ export default async function DashboardPage() {
     })
     .from(budgets)
     .where(and(eq(budgets.userId, user.userId), eq(budgets.month, prevMonth)))
-  
+
   const prevBudgetSum = Number(prevBudgetTotal?.total ?? 0)
 
   const incomeDelta = pctDelta(curIncome, prevIncome)
@@ -179,116 +173,116 @@ export default async function DashboardPage() {
     .innerJoin(categories, eq(transactions.categoryId, categories.id))
     .where(eq(transactions.userId, user.userId))
     .orderBy(desc(transactions.date))
-    .limit(10)
+    .limit(8)
+
+  const emailPrefix = user.email?.split('@')[0] ?? 'there'
+  const prettyName = emailPrefix.charAt(0).toUpperCase() + emailPrefix.slice(1)
+  const todayPretty = new Intl.DateTimeFormat('en-US', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  }).format(now)
+  const monthLabel = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' }).format(now)
 
   return (
-    <div className="space-y-7">
+    <div className="space-y-6">
+      {/* Hero row */}
       <Reveal
         as="section"
-        className="rounded-3xl border border-border/70 bg-card px-6 py-7 shadow-[0_12px_34px_rgba(0,0,0,0.04)] sm:px-8"
+        className="flex flex-wrap items-center justify-between gap-4"
       >
-        <div className="flex items-start gap-4">
-          <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-sm">
-            <CircleDollarSign className="h-5 w-5" />
+        <div>
+          <h2 className="text-2xl font-semibold tracking-tight sm:text-[28px]">
+            Welcome back, {prettyName}
+            <span className="ml-2 inline-block" aria-hidden>👋</span>
+          </h2>
+          <p className="mt-1 text-sm font-medium text-muted-foreground">
+            Here&apos;s an overview of your finances today.
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="inline-flex h-10 items-center gap-2 rounded-xl border border-border bg-card px-3 text-xs font-semibold text-foreground shadow-card">
+            <CalendarDays className="h-3.5 w-3.5 text-muted-foreground" />
+            {todayPretty}
           </span>
-          <div>
-            <h1 className="text-3xl font-semibold tracking-tight">Dashboard</h1>
-            <p className="mt-1 text-sm font-medium text-muted-foreground">
-              Welcome back! Here&apos;s an overview of your finances.
-            </p>
-          </div>
+          <Button asChild size="default" className="gap-1.5">
+            <Link href="/transactions?new=1">
+              <ArrowUpRight className="h-4 w-4" />
+              New Transaction
+            </Link>
+          </Button>
         </div>
       </Reveal>
 
+      {/* Summary cards */}
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-        <Reveal delay={80}>
-          <Card className="h-full bg-gradient-to-b from-card to-muted/20">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1">
-              <CardTitle className="text-sm font-semibold">Balance</CardTitle>
-              <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-muted text-muted-foreground">
-                <Wallet className="h-4 w-4" />
-              </span>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="flex items-center gap-2">
-                <span
-                  className={cn(
-                    'text-[1.85rem] font-semibold tracking-tight tabular-nums',
-                    'text-emerald-600 dark:text-emerald-400',
-                  )}
-                >
-                  {formatCurrency(balance)}
-                </span>
-                <DeltaChip delta={balanceDelta} positiveIsGood />
-              </div>
+        <Reveal delay={60}>
+          <MetricCard
+            title="Balance"
+            period={monthLabel}
+            amount={formatCurrency(balance)}
+            amountClass="text-foreground"
+            delta={<DeltaChip delta={balanceDelta} positiveIsGood />}
+            icon={<Wallet className="h-4 w-4" />}
+            iconTone="primary"
+            footer={
               <p className="text-xs font-medium text-muted-foreground">
                 Total budget limits • {new Intl.DateTimeFormat('en-US', { month: 'long', year: 'numeric' }).format(now)}
               </p>
-            </CardContent>
-          </Card>
+            }
+            sparkline={<Sparkline data={balanceSpark} colorClass="text-primary/60" />}
+          />
         </Reveal>
 
-        <Reveal delay={160}>
-          <Card className="h-full bg-gradient-to-b from-card to-muted/20">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1">
-              <CardTitle className="text-sm font-semibold">Income</CardTitle>
-              <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300">
-                <TrendingUp className="h-4 w-4" />
-              </span>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="flex items-center gap-2">
-                <span className="text-[1.85rem] font-semibold tracking-tight tabular-nums text-emerald-600 dark:text-emerald-400">
-                  +{formatCurrency(income)}
-                </span>
-                <DeltaChip delta={incomeDelta} positiveIsGood />
-              </div>
-              <Sparkline data={incomeSpark} colorClass="text-emerald-500/80" />
-              <p className="text-xs font-medium text-muted-foreground">Last 30 days trend</p>
-            </CardContent>
-          </Card>
+        <Reveal delay={120}>
+          <MetricCard
+            title="Income"
+            period="Last 30d"
+            amount={`+${formatCurrency(income)}`}
+            amountClass="text-emerald-600 dark:text-emerald-400"
+            delta={<DeltaChip delta={incomeDelta} positiveIsGood />}
+            icon={<TrendingUp className="h-4 w-4" />}
+            iconTone="success"
+            footer={<p className="text-xs font-medium text-muted-foreground">30-day trend</p>}
+            sparkline={<Sparkline data={incomeSpark} colorClass="text-emerald-500/80" />}
+          />
         </Reveal>
 
-        <Reveal delay={240} className="sm:col-span-2 xl:col-span-1">
-          <Card className="h-full bg-gradient-to-b from-card to-muted/20">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1">
-              <CardTitle className="text-sm font-semibold">Expenses</CardTitle>
-              <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-300">
-                <TrendingDown className="h-4 w-4" />
-              </span>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="flex items-center gap-2">
-                <span className="text-[1.85rem] font-semibold tracking-tight tabular-nums text-red-600 dark:text-red-400">
-                  −{formatCurrency(expense)}
-                </span>
-                <DeltaChip delta={expenseDelta} positiveIsGood={false} />
-              </div>
-              <Sparkline data={expenseSpark} colorClass="text-red-500/80" />
-              <p className="text-xs font-medium text-muted-foreground">Last 30 days trend</p>
-            </CardContent>
-          </Card>
+        <Reveal delay={180} className="sm:col-span-2 xl:col-span-1">
+          <MetricCard
+            title="Expenses"
+            period="Last 30d"
+            amount={`−${formatCurrency(expense)}`}
+            amountClass="text-rose-600 dark:text-rose-400"
+            delta={<DeltaChip delta={expenseDelta} positiveIsGood={false} />}
+            icon={<TrendingDown className="h-4 w-4" />}
+            iconTone="danger"
+            footer={<p className="text-xs font-medium text-muted-foreground">30-day trend</p>}
+            sparkline={<Sparkline data={expenseSpark} colorClass="text-rose-500/80" />}
+          />
         </Reveal>
       </div>
 
-      <Reveal delay={280}>
+      <Reveal delay={220}>
         <OverspentBudgetAlert />
       </Reveal>
 
-      <Reveal delay={320}>
+      <Reveal delay={260}>
         <SummaryChart />
       </Reveal>
 
-      <Reveal delay={360}>
+      <Reveal delay={300}>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <div>
-              <CardTitle>Recent Transactions</CardTitle>
-              <p className="mt-1 text-sm font-medium text-muted-foreground">Your latest entries at a glance</p>
+              <CardTitle className="text-base">Recent activity</CardTitle>
+              <p className="mt-1 text-xs font-medium text-muted-foreground">
+                Your latest entries at a glance
+              </p>
             </div>
-            <Button variant="outline" size="sm" asChild>
-              <Link href="/transactions">
-                View all <ArrowRight className="ml-1 h-4 w-4" />
+            <Button variant="ghost" size="sm" asChild>
+              <Link href="/transactions" className="gap-1">
+                View all <ArrowRight className="h-3.5 w-3.5" />
               </Link>
             </Button>
           </CardHeader>
@@ -305,38 +299,45 @@ export default async function DashboardPage() {
                 }
               />
             ) : (
-              <div className="space-y-2">
-                {recentTransactions.map((tx, i) => {
+              <div className="-mx-1 divide-y divide-border/60">
+                {recentTransactions.map((tx) => {
                   const parts = tx.description.split(' | ')
+                  const isIncome = tx.type === 'INCOME'
                   return (
-                    <Reveal
+                    <div
                       key={tx.id}
-                      delay={380 + i * 30}
-                      className="flex items-center justify-between rounded-xl border border-border/70 bg-muted/20 px-4 py-3 transition-colors hover:bg-muted/40"
+                      className="flex items-center justify-between gap-3 rounded-lg px-1.5 py-3 transition-colors hover:bg-muted/40"
                     >
-                      <div className="flex items-center gap-3">
-                        <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-background text-base shadow-sm">
+                      <div className="flex min-w-0 items-center gap-3">
+                        <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-muted text-base">
                           {tx.category.icon}
                         </span>
-                        <div>
-                          <p className="text-sm font-semibold tracking-tight">{parts[0]}</p>
-                          <p className="text-xs font-medium text-muted-foreground">
-                            {tx.category.name} • {formatDate(tx.date)}
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-semibold tracking-tight text-foreground">
+                            {parts[0]}
+                          </p>
+                          <p className="truncate text-xs font-medium text-muted-foreground">
+                            {tx.category.name}
                           </p>
                         </div>
                       </div>
-                      <span
-                        className={cn(
-                          'font-mono text-sm font-semibold tabular-nums',
-                          tx.type === 'INCOME'
-                            ? 'text-emerald-600 dark:text-emerald-400'
-                            : 'text-red-600 dark:text-red-400',
-                        )}
-                      >
-                        {tx.type === 'INCOME' ? '+' : '−'}
-                        {formatCurrency(Number(tx.amount))}
-                      </span>
-                    </Reveal>
+                      <div className="flex shrink-0 items-center gap-4">
+                        <span className="hidden text-xs font-medium text-muted-foreground sm:inline">
+                          {formatDate(tx.date)}
+                        </span>
+                        <span
+                          className={cn(
+                            'font-mono text-sm font-semibold tabular-nums',
+                            isIncome
+                              ? 'text-emerald-600 dark:text-emerald-400'
+                              : 'text-rose-600 dark:text-rose-400',
+                          )}
+                        >
+                          {isIncome ? '+' : '−'}
+                          {formatCurrency(Number(tx.amount))}
+                        </span>
+                      </div>
+                    </div>
                   )
                 })}
               </div>
@@ -345,6 +346,61 @@ export default async function DashboardPage() {
         </Card>
       </Reveal>
     </div>
+  )
+}
+
+function MetricCard({
+  title,
+  period,
+  amount,
+  amountClass,
+  delta,
+  icon,
+  iconTone,
+  footer,
+  sparkline,
+}: {
+  title: string
+  period: string
+  amount: string
+  amountClass?: string
+  delta: React.ReactNode
+  icon: React.ReactNode
+  iconTone: 'primary' | 'success' | 'danger'
+  footer: React.ReactNode
+  sparkline?: React.ReactNode
+}) {
+  const toneClass =
+    iconTone === 'primary'
+      ? 'bg-primary/10 text-primary'
+      : iconTone === 'success'
+      ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300'
+      : 'bg-rose-100 text-rose-700 dark:bg-rose-500/15 dark:text-rose-300'
+
+  return (
+    <Card className="h-full">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <div className="flex items-center gap-2">
+          <span className={cn('inline-flex h-8 w-8 items-center justify-center rounded-lg', toneClass)}>
+            {icon}
+          </span>
+          <CardTitle className="text-sm font-semibold text-muted-foreground">{title}</CardTitle>
+        </div>
+        <span className="inline-flex items-center rounded-full border border-border bg-muted/50 px-2 py-0.5 text-[10px] font-semibold text-muted-foreground">
+          {period}
+        </span>
+      </CardHeader>
+      <CardContent className="space-y-3 pt-1">
+        <div className="flex items-end gap-2">
+          <span className={cn('text-[1.9rem] font-semibold leading-none tracking-tight tabular-nums', amountClass)}>
+            {amount}
+          </span>
+          {delta}
+        </div>
+        {sparkline}
+        {footer}
+      </CardContent>
+    </Card>
   )
 }
 

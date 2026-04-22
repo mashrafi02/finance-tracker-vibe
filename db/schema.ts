@@ -9,6 +9,7 @@ import {
 } from 'drizzle-orm/pg-core'
 
 export const transactionTypeEnum = pgEnum('transaction_type', ['INCOME', 'EXPENSE'])
+export const budgetTypeEnum = pgEnum('budget_type', ['SPENDING', 'INCOME_GOAL'])
 
 export const users = pgTable('users', {
   id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
@@ -54,6 +55,7 @@ export const budgets = pgTable('budgets', {
   id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
   limit: numeric('limit', { precision: 12, scale: 2 }).notNull(),
   month: text('month').notNull(),   // "YYYY-MM"
+  type: budgetTypeEnum('type').notNull().default('SPENDING'),
   categoryId: text('category_id')
     .notNull()
     .references(() => categories.id, { onDelete: 'cascade' }),
@@ -61,7 +63,7 @@ export const budgets = pgTable('budgets', {
     .notNull()
     .references(() => users.id, { onDelete: 'cascade' }),
 }, (t) => [
-  uniqueIndex('budgets_user_category_month_idx').on(t.userId, t.categoryId, t.month),
+  uniqueIndex('budgets_user_category_month_type_idx').on(t.userId, t.categoryId, t.month, t.type),
 ])
 
 // Inferred types — import these in API routes and components

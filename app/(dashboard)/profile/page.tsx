@@ -8,7 +8,6 @@ import { Separator } from '@/components/ui/separator'
 import { Skeleton } from '@/components/ui/skeleton'
 import useSWR from 'swr'
 import { fetcher } from '@/lib/utils'
-import { UserRound } from 'lucide-react'
 
 interface AuthUser {
   userId: string
@@ -30,36 +29,29 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="space-y-7">
-      <section className="rounded-3xl border border-border/70 bg-card px-6 py-7 shadow-[0_12px_34px_rgba(0,0,0,0.04)] sm:px-8">
-        <div className="flex items-start gap-4">
-          <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-sm">
-            <UserRound className="h-5 w-5" />
-          </span>
-          <div>
-            <h1 className="text-3xl font-semibold tracking-tight">Profile</h1>
-            <p className="mt-1 text-sm font-medium text-muted-foreground">
-              Manage your account settings.
-            </p>
-          </div>
-        </div>
+    <div className="space-y-6">
+      <section>
+        <h2 className="text-2xl font-semibold tracking-tight sm:text-[28px]">Profile</h2>
+        <p className="mt-1 text-sm font-medium text-muted-foreground">
+          Manage your account settings.
+        </p>
       </section>
 
       <Separator className="opacity-50" />
 
-      <Card className="bg-gradient-to-b from-card to-muted/15">
+      <Card>
         <CardHeader>
-          <CardTitle>Account</CardTitle>
-          <CardDescription>Your account information.</CardDescription>
+          <CardTitle className="text-base">Account</CardTitle>
+          <CardDescription className="text-xs">Your account information.</CardDescription>
         </CardHeader>
         <CardContent>
           <dl className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div className="rounded-xl border border-border/70 bg-muted/20 px-4 py-3">
-              <dt className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Email</dt>
+            <div className="rounded-xl border border-border/70 bg-muted/30 px-4 py-3">
+              <dt className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">Email</dt>
               <dd className="mt-1 text-sm font-semibold tracking-tight">{user.email}</dd>
             </div>
-            <div className="rounded-xl border border-border/70 bg-muted/20 px-4 py-3">
-              <dt className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Username</dt>
+            <div className="rounded-xl border border-border/70 bg-muted/30 px-4 py-3">
+              <dt className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">Username</dt>
               <dd className="mt-1 text-sm font-semibold tracking-tight">{user.username}</dd>
             </div>
           </dl>

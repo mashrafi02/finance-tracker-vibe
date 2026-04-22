@@ -65,13 +65,13 @@ export function SpendingByCategoryChart() {
     <Card>
       <CardHeader className="flex flex-col gap-4 pb-2 sm:flex-row sm:items-center sm:justify-between">
         <div className="space-y-1">
-          <CardTitle>Spending by Category</CardTitle>
-          <CardDescription>
-            A breakdown of your expenses by category.
+          <CardTitle className="text-base">Spending by Category</CardTitle>
+          <CardDescription className="text-xs">
+            A breakdown of your expenses by category
           </CardDescription>
         </div>
         <Select value={range} onValueChange={(value) => value && setRange(value as Range)}>
-          <SelectTrigger className="w-full sm:w-[180px]">
+          <SelectTrigger className="h-9 w-full rounded-lg sm:w-[150px]">
             <SelectValue placeholder="Select range" />
           </SelectTrigger>
           <SelectContent>
@@ -98,7 +98,7 @@ export function SpendingByCategoryChart() {
             </p>
           </div>
         ) : (
-          <ChartContainer config={chartConfig} className="h-[300px] w-full rounded-2xl bg-muted/15 p-2">
+          <ChartContainer config={chartConfig} className="h-[300px] w-full">
             <PieChart>
               <ChartTooltip
                 content={<ChartTooltipContent nameKey="name" hideLabel />}

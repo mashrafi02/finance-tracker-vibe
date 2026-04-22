@@ -142,7 +142,7 @@ export function CommandMenuTrigger() {
         type="button"
         onClick={() => setOpen(true)}
         aria-label="Open command menu"
-        className="hidden h-10 items-center gap-2 rounded-xl border border-border bg-card/70 px-3 text-sm text-muted-foreground shadow-sm transition-colors hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/20 sm:inline-flex"
+        className="hidden h-10 items-center gap-2 rounded-xl border border-border bg-card px-3 text-sm text-muted-foreground shadow-card transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40 focus-visible:ring-offset-2 sm:inline-flex"
       >
         <Search className="h-3.5 w-3.5" />
         <span className="text-xs font-medium">Search…</span>
