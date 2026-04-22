@@ -1,7 +1,7 @@
 # Personal Finance Tracker
 
 > A web app to track income and expenses, manage budgets, and visualize spending.
-> Built with Next.js 14, TypeScript, custom JWT auth, Drizzle ORM, and Shadcn UI.
+> Built with Next.js 16, TypeScript, custom JWT auth, Drizzle ORM, and Shadcn UI.
 
 ## Features
 
@@ -49,9 +49,7 @@ cd finance-tracker
 # 2. Install dependencies
 pnpm install
 
-# 3. Copy environment variables
-cp .env.example .env
-# Edit .env with your values (see Environment variables below)
+# 3. create .env in the root and add your DATABASE_URL and JWT_SECRET
 
 # 4. Push the database schema
 pnpm drizzle-kit push
@@ -67,7 +65,7 @@ Open [http://localhost:3000](http://localhost:3000).
 
 ## Environment variables
 
-Copy [.env.example](.env.example) to `.env` and fill in all values:
+create .env in the root
 
 | Variable | Required | Description |
 |---|---|---|
