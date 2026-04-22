@@ -1,4 +1,5 @@
 import useSWR, { useSWRConfig } from 'swr'
+import { useRouter } from 'next/navigation'
 import { fetcher } from '@/lib/utils'
 
 export interface SavingsEntry {
@@ -16,6 +17,7 @@ interface SavingsEntriesResponse {
 
 export function useSavingsEntries(goalId: string | null) {
   const { mutate: globalMutate } = useSWRConfig()
+  const router = useRouter()
   const key = goalId ? `/api/savings-goals/${goalId}/entries` : null
 
   const { data, error, isLoading, mutate } = useSWR<SavingsEntriesResponse>(
@@ -24,10 +26,16 @@ export function useSavingsEntries(goalId: string | null) {
   )
 
   // Revalidate everything affected by savings entry mutations:
-  // this goal's entries list and the goals list (for savedAmount).
+  // this goal's entries list, the goals list (for savedAmount),
+  // the recent savings list, and the dashboard (for balance).
   const revalidateAll = async () => {
     await mutate()
     await globalMutate('/api/savings-goals')
+    await globalMutate(
+      (key) =>
+        typeof key === 'string' && key.startsWith('/api/savings-entries/recent'),
+    )
+    router.refresh()
   }
 
   const createEntry = async (values: { amount: number; date: string }) => {

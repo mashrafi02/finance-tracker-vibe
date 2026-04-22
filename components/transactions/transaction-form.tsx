@@ -5,6 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { toast } from 'sonner'
 import { useSWRConfig } from 'swr'
+import { useRouter } from 'next/navigation'
 import {
   Form,
   FormControl,
@@ -57,6 +58,7 @@ export function TransactionForm({
 }: TransactionFormProps) {
   const isEditing = Boolean(transaction)
   const { mutate: globalMutate } = useSWRConfig()
+  const router = useRouter()
 
   // Parse note from description if editing (note is stored as "description | note")
   const parseDescriptionAndNote = (desc: string) => {
@@ -117,6 +119,7 @@ export function TransactionForm({
             key.startsWith('/api/analytics') ||
             key.startsWith('/api/transactions')),
       )
+      router.refresh()
       onSuccess()
     } catch {
       toast.error('Failed to save. Please try again.')

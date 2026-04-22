@@ -17,7 +17,7 @@ export function RecentActivityCard() {
       <CardContent className="flex h-full flex-col p-5">
         <div className="mb-4 flex items-start justify-between">
           <div>
-            <h3 className="text-sm font-semibold">Recent activity</h3>
+            <h3 className="text-sm font-semibold">Recent transactions</h3>
             <p className="mt-0.5 text-[11px] font-medium text-muted-foreground">
               Your latest entries
             </p>

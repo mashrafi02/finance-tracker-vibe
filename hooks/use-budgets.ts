@@ -1,4 +1,5 @@
 import useSWR from 'swr'
+import { useRouter } from 'next/navigation'
 import { fetcher } from '@/lib/utils'
 
 export type BudgetType = 'SPENDING' | 'INCOME_GOAL'
@@ -27,6 +28,7 @@ interface BudgetsResponse {
 
 export function useBudgets(month: string) {
   const key = `/api/budgets?month=${month}`
+  const router = useRouter()
 
   const { data, error, isLoading, mutate: mutateBudgets } = useSWR<BudgetsResponse>(
     key,
@@ -51,6 +53,7 @@ export function useBudgets(month: string) {
     }
 
     await mutateBudgets()
+    router.refresh()
 
     return res.json()
   }
@@ -66,6 +69,7 @@ export function useBudgets(month: string) {
     }
 
     await mutateBudgets()
+    router.refresh()
   }
 
   const addFundsToBudget = async (budgetId: string, amount: number) => {
@@ -81,6 +85,7 @@ export function useBudgets(month: string) {
     }
 
     await mutateBudgets()
+    router.refresh()
 
     return res.json()
   }

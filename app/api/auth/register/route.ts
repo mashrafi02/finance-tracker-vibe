@@ -1,6 +1,6 @@
 import bcrypt from 'bcryptjs'
 import { db } from '@/db'
-import { users, categories } from '@/db/schema'
+import { users, accounts } from '@/db/schema'
 import { signToken, createAuthCookie } from '@/lib/auth'
 import { registerSchema } from '@/lib/validations/auth'
 import { eq, or } from 'drizzle-orm'
@@ -41,16 +41,29 @@ export async function POST(req: Request) {
     }
 
     const hashedPassword = await bcrypt.hash(password, 12)
-    const [user] = await db
-      .insert(users)
-      .values({
-        email: email.toLowerCase(),
-        username: username.toLowerCase(),
-        password: hashedPassword,
-        name,
-      })
-      .returning({ id: users.id, email: users.email, name: users.name, username: users.username })
+    
+    // Use transaction to create user and account atomically
+    const user = await db.transaction(async (tx) => {
+      const [newUser] = await tx
+        .insert(users)
+        .values({
+          email: email.toLowerCase(),
+          username: username.toLowerCase(),
+          password: hashedPassword,
+          name,
+        })
+        .returning({ id: users.id, email: users.email, name: users.name, username: users.username })
 
+      // Create account with initial balance of 0
+      await tx
+        .insert(accounts)
+        .values({
+          userId: newUser.id,
+          balance: '0',
+        })
+
+      return newUser
+    })
 
     const token = await signToken({ userId: user.id, email: user.email })
     const cookie = createAuthCookie(token)

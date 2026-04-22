@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server'
 import { db } from '@/db'
-import { transactions, categories } from '@/db/schema'
+import { transactions, categories, accounts } from '@/db/schema'
 import { getAuthUser } from '@/lib/auth'
 import { createTransactionSchema, transactionQuerySchema } from '@/lib/validations/transaction'
 import { eq, and, desc, asc, count, gte, lte, sql, inArray, ilike } from 'drizzle-orm'
@@ -140,34 +140,53 @@ export async function POST(req: Request) {
 
   const { amount, type, description, date, categoryId, note } = result.data
 
-  // 3. Verify category belongs to user
+  // 3. Use transaction to verify category, insert transaction, and update account balance
   try {
-    const [category] = await db
-      .select({ id: categories.id })
-      .from(categories)
-      .where(and(eq(categories.id, categoryId), eq(categories.userId, user.userId)))
-      .limit(1)
+    const created = await db.transaction(async (tx) => {
+      // Verify category belongs to user
+      const [category] = await tx
+        .select({ id: categories.id })
+        .from(categories)
+        .where(and(eq(categories.id, categoryId), eq(categories.userId, user.userId)))
+        .limit(1)
 
-    if (!category) {
-      return Response.json({ error: 'Category not found' }, { status: 404 })
-    }
+      if (!category) {
+        throw new Error('Category not found')
+      }
 
-    // 4. Insert transaction
-    const [created] = await db
-      .insert(transactions)
-      .values({
-        amount: amount.toFixed(2),
-        type,
-        description: note ? `${description} | ${note}` : description,
-        date: new Date(date),
-        categoryId,
-        userId: user.userId,
-      })
-      .returning()
+      // Insert transaction
+      const [newTransaction] = await tx
+        .insert(transactions)
+        .values({
+          amount: amount.toFixed(2),
+          type,
+          description: note ? `${description} | ${note}` : description,
+          date: new Date(date),
+          categoryId,
+          userId: user.userId,
+        })
+        .returning()
+
+      // Update account balance based on transaction type
+      const balanceChange = type === 'INCOME' ? amount : -amount
+      await tx
+        .update(accounts)
+        .set({
+          balance: sql`${accounts.balance} + ${balanceChange}`,
+        })
+        .where(eq(accounts.userId, user.userId))
+
+      return newTransaction
+    })
 
     return Response.json(created, { status: 201 })
   } catch (error) {
     console.error('[POST /api/transactions]', error)
+    
+    if (error instanceof Error && error.message === 'Category not found') {
+      return Response.json({ error: 'Category not found' }, { status: 404 })
+    }
+    
     return Response.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

@@ -1,7 +1,7 @@
 import { db } from '@/db'
-import { budgets } from '@/db/schema'
+import { budgets, accounts } from '@/db/schema'
 import { getAuthUser } from '@/lib/auth'
-import { eq, and } from 'drizzle-orm'
+import { eq, and, sql } from 'drizzle-orm'
 
 export async function DELETE(
   _req: Request,
@@ -15,31 +15,60 @@ export async function DELETE(
 
   const { id } = await params
 
-  // 2. Fetch budget to verify ownership
-  const [existing] = await db
-    .select({ id: budgets.id, userId: budgets.userId })
-    .from(budgets)
-    .where(eq(budgets.id, id))
-    .limit(1)
-
-  if (!existing) {
-    return Response.json({ error: 'Not found' }, { status: 404 })
-  }
-
-  // 3. Return 403 not 404 — do not reveal the record exists if it belongs to another user
-  if (existing.userId !== user.userId) {
-    return Response.json({ error: 'Forbidden' }, { status: 403 })
-  }
-
-  // 4. Delete budget
+  // 2. Use transaction to fetch, verify, delete budget and update account balance
   try {
-    await db
-      .delete(budgets)
-      .where(and(eq(budgets.id, id), eq(budgets.userId, user.userId)))
+    await db.transaction(async (tx) => {
+      // Fetch budget to verify ownership and get limit
+      const [existing] = await tx
+        .select({
+          id: budgets.id,
+          userId: budgets.userId,
+          limit: budgets.limit,
+          type: budgets.type,
+        })
+        .from(budgets)
+        .where(eq(budgets.id, id))
+        .limit(1)
+
+      if (!existing) {
+        throw new Error('Not found')
+      }
+
+      // Return 403 not 404 — do not reveal the record exists if it belongs to another user
+      if (existing.userId !== user.userId) {
+        throw new Error('Forbidden')
+      }
+
+      // Delete budget
+      await tx
+        .delete(budgets)
+        .where(and(eq(budgets.id, id), eq(budgets.userId, user.userId)))
+
+      // Update account balance by subtracting the budget limit
+      // Only SPENDING budgets affect the main balance.
+      if (existing.type === 'SPENDING') {
+        await tx
+          .update(accounts)
+          .set({
+            balance: sql`${accounts.balance} - ${existing.limit}`,
+          })
+          .where(eq(accounts.userId, user.userId))
+      }
+    })
 
     return new Response(null, { status: 204 })
   } catch (error) {
     console.error('[DELETE /api/budgets/:id]', error)
+    
+    if (error instanceof Error) {
+      if (error.message === 'Not found') {
+        return Response.json({ error: 'Not found' }, { status: 404 })
+      }
+      if (error.message === 'Forbidden') {
+        return Response.json({ error: 'Forbidden' }, { status: 403 })
+      }
+    }
+    
     return Response.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

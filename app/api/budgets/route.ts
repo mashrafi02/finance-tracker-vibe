@@ -1,9 +1,9 @@
 import { NextRequest } from 'next/server'
 import { db } from '@/db'
-import { budgets, categories, transactions } from '@/db/schema'
+import { budgets, categories, transactions, accounts } from '@/db/schema'
 import { getAuthUser } from '@/lib/auth'
 import { createBudgetSchema, budgetQuerySchema } from '@/lib/validations/budget'
-import { eq, and, gte, lte, sum } from 'drizzle-orm'
+import { eq, and, gte, lte, sum, sql } from 'drizzle-orm'
 
 export async function GET(req: NextRequest) {
   // 1. Authenticate
@@ -193,21 +193,56 @@ export async function POST(req: Request) {
       return Response.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    // 4. Upsert budget — insert or update if exists (scoped by type)
-    const [budget] = await db
-      .insert(budgets)
-      .values({
-        userId: user.userId,
-        categoryId,
-        limit: limit.toString(),
-        month,
-        type,
-      })
-      .onConflictDoUpdate({
-        target: [budgets.userId, budgets.categoryId, budgets.month, budgets.type],
-        set: { limit: limit.toString() },
-      })
-      .returning()
+    // 4. Use transaction to upsert budget and update account balance
+    const budget = await db.transaction(async (tx) => {
+      // Check if budget already exists for this category/month/type
+      const [existing] = await tx
+        .select({ id: budgets.id, limit: budgets.limit })
+        .from(budgets)
+        .where(
+          and(
+            eq(budgets.userId, user.userId),
+            eq(budgets.categoryId, categoryId),
+            eq(budgets.month, month),
+            eq(budgets.type, type)
+          )
+        )
+        .limit(1)
+
+      // Calculate the difference for account balance update
+      // Only SPENDING budgets affect the main balance.
+      // INCOME_GOAL budgets are targets only.
+      const oldLimit = existing ? Number(existing.limit) : 0
+      const balanceDiff = type === 'SPENDING' ? limit - oldLimit : 0
+
+      // Upsert the budget
+      const [upsertedBudget] = await tx
+        .insert(budgets)
+        .values({
+          userId: user.userId,
+          categoryId,
+          limit: limit.toString(),
+          month,
+          type,
+        })
+        .onConflictDoUpdate({
+          target: [budgets.userId, budgets.categoryId, budgets.month, budgets.type],
+          set: { limit: limit.toString() },
+        })
+        .returning()
+
+      // Update account balance by the difference
+      if (balanceDiff !== 0) {
+        await tx
+          .update(accounts)
+          .set({
+            balance: sql`${accounts.balance} + ${balanceDiff}`,
+          })
+          .where(eq(accounts.userId, user.userId))
+      }
+
+      return upsertedBudget
+    })
 
     return Response.json(budget, { status: 201 })
   } catch (error) {

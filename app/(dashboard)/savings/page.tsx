@@ -1,6 +1,7 @@
 'use client'
 
 import { SavingsGoalsGrid } from '@/components/savings/savings-goals-grid'
+import { RecentSavingsCard } from '@/components/savings/recent-savings-card'
 import { Reveal } from '@/components/ui/reveal'
 
 export default function SavingsPage() {
@@ -15,9 +16,15 @@ export default function SavingsPage() {
         </p>
       </Reveal>
 
-      <Reveal delay={60} className="space-y-5">
-        <SavingsGoalsGrid />
-      </Reveal>
+      <div className="grid gap-5 lg:grid-cols-3">
+        <Reveal delay={60} className="space-y-5 lg:col-span-2">
+          <SavingsGoalsGrid />
+        </Reveal>
+
+        <Reveal delay={120} className="lg:col-span-1">
+          <RecentSavingsCard />
+        </Reveal>
+      </div>
     </div>
   )
 }

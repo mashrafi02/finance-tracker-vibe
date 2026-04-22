@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { useSWRConfig } from 'swr'
+import { useRouter } from 'next/navigation'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -30,6 +31,7 @@ export function DeleteTransactionDialog({
 }: DeleteTransactionDialogProps) {
   const [isDeleting, setIsDeleting] = useState(false)
   const { mutate: globalMutate } = useSWRConfig()
+  const router = useRouter()
 
   async function handleDelete() {
     if (!transactionId) return
@@ -55,6 +57,7 @@ export function DeleteTransactionDialog({
             key.startsWith('/api/analytics') ||
             key.startsWith('/api/transactions')),
       )
+      router.refresh()
       onOpenChange(false)
       onSuccess()
     } catch {

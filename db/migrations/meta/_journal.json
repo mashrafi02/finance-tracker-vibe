@@ -29,6 +29,20 @@
       "when": 1776838168332,
       "tag": "0003_busy_moon_knight",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1776846036265,
+      "tag": "0004_marvelous_night_nurse",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1776850109251,
+      "tag": "0005_nervous_nitro",
+      "breakpoints": true
     }
   ]
 }

@@ -1,5 +1,5 @@
 import { db } from '@/db'
-import { savingsGoals, savingsEntries } from '@/db/schema'
+import { savingsGoals, savingsEntries, accounts } from '@/db/schema'
 import { getAuthUser } from '@/lib/auth'
 import { createSavingsEntrySchema } from '@/lib/validations/savings'
 import { and, eq, desc, sql } from 'drizzle-orm'
@@ -107,6 +107,14 @@ export async function POST(
           savedAmount: sql`${savingsGoals.savedAmount} + ${result.data.amount}`,
         })
         .where(eq(savingsGoals.id, goalId))
+
+      // Decrease account balance (money moved from balance to savings)
+      await tx
+        .update(accounts)
+        .set({
+          balance: sql`${accounts.balance} - ${result.data.amount}`,
+        })
+        .where(eq(accounts.userId, user.userId))
 
       return newEntry
     })

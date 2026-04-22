@@ -1,5 +1,6 @@
 import {
   ChartColumn,
+  FileText,
   LayoutDashboard,
   PiggyBank,
   ReceiptText,
@@ -23,6 +24,7 @@ export const navItems: NavItem[] = [
   { title: 'Budget management', href: '/budget-management',  icon: PiggyBank,       section: 'menu' },
   { title: 'Savings',           href: '/savings',            icon: Sprout,          section: 'menu' },
   { title: 'Analytics',         href: '/analytics',          icon: ChartColumn,     section: 'menu' },
+  { title: 'Reports',           href: '/reports',            icon: FileText,        section: 'menu' },
   { title: 'Profile',      href: '/profile',      icon: UserRound,       section: 'account' },
 ]
 

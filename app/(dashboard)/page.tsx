@@ -1,6 +1,6 @@
 import { getAuthUser } from '@/lib/auth'
 import { db } from '@/db'
-import { transactions } from '@/db/schema'
+import { transactions, accounts, budgets, savingsEntries, users } from '@/db/schema'
 import { and, eq, gte, lt, sql } from 'drizzle-orm'
 import Link from 'next/link'
 import { ArrowUpRight, CalendarDays } from 'lucide-react'
@@ -14,11 +14,69 @@ import { OverspentBudgetAlert } from '@/components/budgets/overspent-budget-aler
 import { BalanceCard } from '@/components/dashboard/balance-card'
 import { MonthlySummaryCard } from '@/components/dashboard/monthly-summary-card'
 import { RecentActivityCard } from '@/components/dashboard/recent-activity-card'
+import { LatestReportsCard } from '@/components/dashboard/latest-reports-card'
 import { SavingsCard } from '@/components/dashboard/savings-card'
 
 function pctDelta(current: number, previous: number): number | null {
   if (previous === 0) return current === 0 ? 0 : null
   return ((current - previous) / Math.abs(previous)) * 100
+}
+
+/**
+ * Gets the user's main balance from the accounts table.
+ * For legacy users without an account record, backfills one using the
+ * formula: sum(budget limits) + lifetime income - lifetime expense - total savings contributions.
+ */
+async function getMainBalance(userId: string): Promise<number> {
+  const [account] = await db
+    .select({ balance: accounts.balance })
+    .from(accounts)
+    .where(eq(accounts.userId, userId))
+    .limit(1)
+
+  if (account) {
+    return Number(account.balance)
+  }
+
+  // Legacy user — compute balance from existing data and create account
+  // Only SPENDING budgets add to balance. INCOME_GOAL budgets are targets only.
+  const [budgetTotals] = await db
+    .select({
+      total: sql<string>`COALESCE(SUM(${budgets.limit}), 0)`,
+    })
+    .from(budgets)
+    .where(and(eq(budgets.userId, userId), eq(budgets.type, 'SPENDING')))
+
+  const [txTotals] = await db
+    .select({
+      income: sql<string>`COALESCE(SUM(CASE WHEN type = 'INCOME' THEN amount ELSE 0 END), 0)`,
+      expense: sql<string>`COALESCE(SUM(CASE WHEN type = 'EXPENSE' THEN amount ELSE 0 END), 0)`,
+    })
+    .from(transactions)
+    .where(eq(transactions.userId, userId))
+
+  const [savingsTotals] = await db
+    .select({
+      total: sql<string>`COALESCE(SUM(${savingsEntries.amount}), 0)`,
+    })
+    .from(savingsEntries)
+    .where(eq(savingsEntries.userId, userId))
+
+  const computedBalance =
+    Number(budgetTotals?.total ?? 0) +
+    Number(txTotals?.income ?? 0) -
+    Number(txTotals?.expense ?? 0) -
+    Number(savingsTotals?.total ?? 0)
+
+  await db
+    .insert(accounts)
+    .values({
+      userId,
+      balance: computedBalance.toFixed(2),
+    })
+    .onConflictDoNothing()
+
+  return computedBalance
 }
 
 export default async function DashboardPage() {
@@ -32,14 +90,8 @@ export default async function DashboardPage() {
   const nextMonthStart = new Date(now.getFullYear(), now.getMonth() + 1, 1)
   const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1)
 
-  // All-time totals — for My Balance (net worth)
-  const [lifetime] = await db
-    .select({
-      income: sql<string>`COALESCE(SUM(CASE WHEN type = 'INCOME' THEN amount ELSE 0 END), 0)`,
-      expense: sql<string>`COALESCE(SUM(CASE WHEN type = 'EXPENSE' THEN amount ELSE 0 END), 0)`,
-    })
-    .from(transactions)
-    .where(eq(transactions.userId, user.userId))
+  // Main balance — source of truth from accounts table
+  const totalBalance = await getMainBalance(user.userId)
 
   // This month
   const [thisMonth] = await db
@@ -71,23 +123,29 @@ export default async function DashboardPage() {
       ),
     )
 
-  const lifetimeIncome = Number(lifetime?.income ?? 0)
-  const lifetimeExpense = Number(lifetime?.expense ?? 0)
-  const totalBalance = lifetimeIncome - lifetimeExpense
-
   const curIncome = Number(thisMonth?.income ?? 0)
   const curExpense = Number(thisMonth?.expense ?? 0)
   const prvIncome = Number(prevMonth?.income ?? 0)
   const prvExpense = Number(prevMonth?.expense ?? 0)
 
-  // Previous net worth ≈ current net worth minus this month's activity
+  // Previous balance ≈ current balance minus this month's net change (income - expense)
   const prevBalance = totalBalance - (curIncome - curExpense)
   const balanceDelta = pctDelta(totalBalance, prevBalance)
   const incomeDelta = pctDelta(curIncome, prvIncome)
   const expenseDelta = pctDelta(curExpense, prvExpense)
 
   const emailPrefix = user.email?.split('@')[0] ?? 'there'
-  const prettyName = emailPrefix.charAt(0).toUpperCase() + emailPrefix.slice(1)
+
+  // Pull the display name from the users table — JWT only carries userId + email
+  const [userRow] = await db
+    .select({ name: users.name })
+    .from(users)
+    .where(eq(users.id, user.userId))
+    .limit(1)
+
+  const displayName =
+    userRow?.name?.trim() ||
+    emailPrefix.charAt(0).toUpperCase() + emailPrefix.slice(1)
   const todayPretty = new Intl.DateTimeFormat('en-US', {
     day: 'numeric',
     month: 'long',
@@ -106,7 +164,7 @@ export default async function DashboardPage() {
       >
         <div>
           <h2 className="text-2xl font-semibold tracking-tight sm:text-[28px]">
-            Welcome back, {prettyName}
+            Welcome back, {displayName}
             <span className="ml-2 inline-block" aria-hidden>
               👋
             </span>
@@ -147,6 +205,10 @@ export default async function DashboardPage() {
 
           <Reveal delay={140}>
             <RecentActivityCard />
+          </Reveal>
+
+          <Reveal delay={180}>
+            <LatestReportsCard />
           </Reveal>
         </div>
 

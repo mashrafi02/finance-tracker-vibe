@@ -6,6 +6,7 @@ import {
   pgEnum,
   index,
   uniqueIndex,
+  jsonb,
 } from 'drizzle-orm/pg-core'
 
 export const transactionTypeEnum = pgEnum('transaction_type', ['INCOME', 'EXPENSE'])
@@ -19,6 +20,18 @@ export const users = pgTable('users', {
   name: text('name').notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 })
+
+export const accounts = pgTable('accounts', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  userId: text('user_id')
+    .notNull()
+    .unique()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  balance: numeric('balance', { precision: 12, scale: 2 }).notNull().default('0'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+}, (t) => [
+  index('accounts_user_id_idx').on(t.userId),
+])
 
 export const categories = pgTable('categories', {
   id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
@@ -95,9 +108,24 @@ export const savingsEntries = pgTable('savings_entries', {
   index('savings_entries_goal_id_idx').on(t.savingsGoalId),
 ])
 
+export const monthlyReports = pgTable('monthly_reports', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  month: text('month').notNull(),   // "YYYY-MM"
+  generatedAt: timestamp('generated_at').defaultNow().notNull(),
+  reportData: jsonb('report_data').notNull(),
+  userId: text('user_id')
+    .notNull()
+    .references(() => users.id, { onDelete: 'cascade' }),
+}, (t) => [
+  uniqueIndex('reports_user_month_idx').on(t.userId, t.month),
+  index('monthly_reports_user_id_idx').on(t.userId),
+])
+
 // Inferred types — import these in API routes and components
 export type User = typeof users.$inferSelect
 export type NewUser = typeof users.$inferInsert
+export type Account = typeof accounts.$inferSelect
+export type NewAccount = typeof accounts.$inferInsert
 export type Category = typeof categories.$inferSelect
 export type NewCategory = typeof categories.$inferInsert
 export type Transaction = typeof transactions.$inferSelect
@@ -108,3 +136,5 @@ export type SavingsGoal = typeof savingsGoals.$inferSelect
 export type NewSavingsGoal = typeof savingsGoals.$inferInsert
 export type SavingsEntry = typeof savingsEntries.$inferSelect
 export type NewSavingsEntry = typeof savingsEntries.$inferInsert
+export type MonthlyReport = typeof monthlyReports.$inferSelect
+export type NewMonthlyReport = typeof monthlyReports.$inferInsert
