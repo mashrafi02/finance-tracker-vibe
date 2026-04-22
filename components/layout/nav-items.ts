@@ -3,6 +3,7 @@ import {
   LayoutDashboard,
   PiggyBank,
   ReceiptText,
+  Sprout,
   Tags,
   UserRound,
   type LucideIcon,
@@ -20,6 +21,7 @@ export const navItems: NavItem[] = [
   { title: 'Transactions',      href: '/transactions',       icon: ReceiptText,     section: 'menu' },
   { title: 'Categories',        href: '/categories',         icon: Tags,            section: 'menu' },
   { title: 'Budget management', href: '/budget-management',  icon: PiggyBank,       section: 'menu' },
+  { title: 'Savings',           href: '/savings',            icon: Sprout,          section: 'menu' },
   { title: 'Analytics',         href: '/analytics',          icon: ChartColumn,     section: 'menu' },
   { title: 'Profile',      href: '/profile',      icon: UserRound,       section: 'account' },
 ]

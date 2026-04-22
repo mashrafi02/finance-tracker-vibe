@@ -66,6 +66,35 @@ export const budgets = pgTable('budgets', {
   uniqueIndex('budgets_user_category_month_type_idx').on(t.userId, t.categoryId, t.month, t.type),
 ])
 
+export const savingsGoals = pgTable('savings_goals', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  name: text('name').notNull(),
+  targetAmount: numeric('target_amount', { precision: 12, scale: 2 }).notNull(),
+  savedAmount: numeric('saved_amount', { precision: 12, scale: 2 }).notNull().default('0'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  userId: text('user_id')
+    .notNull()
+    .references(() => users.id, { onDelete: 'cascade' }),
+}, (t) => [
+  index('savings_goals_user_id_idx').on(t.userId),
+])
+
+export const savingsEntries = pgTable('savings_entries', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  amount: numeric('amount', { precision: 12, scale: 2 }).notNull(),
+  date: timestamp('date').notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  savingsGoalId: text('savings_goal_id')
+    .notNull()
+    .references(() => savingsGoals.id, { onDelete: 'cascade' }),
+  userId: text('user_id')
+    .notNull()
+    .references(() => users.id, { onDelete: 'cascade' }),
+}, (t) => [
+  index('savings_entries_user_id_idx').on(t.userId),
+  index('savings_entries_goal_id_idx').on(t.savingsGoalId),
+])
+
 // Inferred types — import these in API routes and components
 export type User = typeof users.$inferSelect
 export type NewUser = typeof users.$inferInsert
@@ -75,3 +104,7 @@ export type Transaction = typeof transactions.$inferSelect
 export type NewTransaction = typeof transactions.$inferInsert
 export type Budget = typeof budgets.$inferSelect
 export type NewBudget = typeof budgets.$inferInsert
+export type SavingsGoal = typeof savingsGoals.$inferSelect
+export type NewSavingsGoal = typeof savingsGoals.$inferInsert
+export type SavingsEntry = typeof savingsEntries.$inferSelect
+export type NewSavingsEntry = typeof savingsEntries.$inferInsert
