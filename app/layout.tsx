@@ -9,7 +9,9 @@ const poppins = Poppins({
   variable: "--font-poppins",
   subsets: ["latin"],
   display: "swap",
-  weight: ["300", "400", "500", "600", "700"],
+  // Only the weights the UI actually uses — each added weight is a separate
+  // font file download.
+  weight: ["400", "500", "600", "700"],
 });
 
 export const metadata: Metadata = {

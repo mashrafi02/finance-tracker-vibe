@@ -30,7 +30,11 @@ export async function GET() {
       return Response.json({ error: 'User not found' }, { status: 404 })
     }
 
-    return Response.json(user)
+    return Response.json(user, {
+      headers: {
+        'Cache-Control': 'private, max-age=30, stale-while-revalidate=300',
+      },
+    })
   } catch (error) {
     console.error('[GET /api/auth/me]', error)
     return Response.json({ error: 'Internal server error' }, { status: 500 })

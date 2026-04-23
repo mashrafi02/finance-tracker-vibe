@@ -1,5 +1,3 @@
-'use client'
-
 import { SavingsGoalsGrid } from '@/components/savings/savings-goals-grid'
 import { RecentSavingsCard } from '@/components/savings/recent-savings-card'
 import { Reveal } from '@/components/ui/reveal'

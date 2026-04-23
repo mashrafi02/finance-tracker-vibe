@@ -1,8 +1,5 @@
-import { getAuthUser } from '@/lib/auth'
+import { getAuthUser, getUserDisplayName } from '@/lib/auth'
 import { redirect } from 'next/navigation'
-import { eq } from 'drizzle-orm'
-import { db } from '@/db'
-import { users } from '@/db/schema'
 import { Header } from '@/components/layout/header'
 import { SidebarNav } from '@/components/layout/sidebar-nav'
 
@@ -17,16 +14,7 @@ export default async function DashboardLayout({
     redirect('/login')
   }
 
-  const [userRow] = await db
-    .select({ name: users.name })
-    .from(users)
-    .where(eq(users.id, user.userId))
-    .limit(1)
-
-  const emailPrefix = user.email.split('@')[0] ?? ''
-  const displayName =
-    userRow?.name?.trim() ||
-    emailPrefix.charAt(0).toUpperCase() + emailPrefix.slice(1)
+  const displayName = await getUserDisplayName(user.userId, user.email)
 
   return (
     <div className="min-h-screen bg-background">

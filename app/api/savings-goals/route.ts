@@ -19,7 +19,11 @@ export async function GET() {
       .where(eq(savingsGoals.userId, user.userId))
       .orderBy(savingsGoals.createdAt)
 
-    return Response.json({ goals })
+    return Response.json({ goals }, {
+      headers: {
+        'Cache-Control': 'private, max-age=15, stale-while-revalidate=120',
+      },
+    })
   } catch (error) {
     console.error('[GET /api/savings-goals]', error)
     return Response.json({ error: 'Internal server error' }, { status: 500 })

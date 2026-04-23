@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import useSWR from 'swr'
+import dynamic from 'next/dynamic'
 import { ArrowLeftRight, PiggyBank, TrendingDown, TrendingUp } from 'lucide-react'
 import {
   Select,
@@ -11,12 +12,40 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Reveal } from '@/components/ui/reveal'
+import { Skeleton } from '@/components/ui/skeleton'
 import { fetcher } from '@/lib/utils'
 import { StatCard } from './stat-card'
-import { SavingsGrowthChart } from './savings-growth-chart'
-import { BudgetPerformanceCard } from './budget-performance-card'
-import { IncomeExpenseBarChart } from '@/components/charts/income-expense-bar-chart'
-import { SpendingByCategoryChart } from '@/components/charts/spending-by-category-chart'
+
+// Recharts is ~95KB gzipped. Defer every chart until after the main page HTML
+// paints — the stat cards render instantly while the chart chunks stream in.
+const ChartFallback = () => <Skeleton className="h-[320px] w-full rounded-xl" />
+
+const SavingsGrowthChart = dynamic(
+  () =>
+    import('./savings-growth-chart').then((m) => ({ default: m.SavingsGrowthChart })),
+  { ssr: false, loading: ChartFallback },
+)
+const BudgetPerformanceCard = dynamic(
+  () =>
+    import('./budget-performance-card').then((m) => ({
+      default: m.BudgetPerformanceCard,
+    })),
+  { ssr: false, loading: ChartFallback },
+)
+const IncomeExpenseBarChart = dynamic(
+  () =>
+    import('@/components/charts/income-expense-bar-chart').then((m) => ({
+      default: m.IncomeExpenseBarChart,
+    })),
+  { ssr: false, loading: ChartFallback },
+)
+const SpendingByCategoryChart = dynamic(
+  () =>
+    import('@/components/charts/spending-by-category-chart').then((m) => ({
+      default: m.SpendingByCategoryChart,
+    })),
+  { ssr: false, loading: ChartFallback },
+)
 
 type Range = '30d' | '90d' | '365d' | 'all'
 

@@ -1,99 +1,20 @@
 'use client'
 
 import * as React from 'react'
-import { useRouter } from 'next/navigation'
-import {
-  CommandDialog,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-  CommandSeparator,
-  CommandShortcut,
-} from '@/components/ui/command'
-import { navItems } from '@/components/layout/nav-items'
-import { Plus, Search, Sun, Moon, Monitor } from 'lucide-react'
-import { useTheme } from '@/components/theme/theme-provider'
+import dynamic from 'next/dynamic'
+import { Search } from 'lucide-react'
 
-interface CommandMenuProps {
-  open: boolean
-  onOpenChange: (open: boolean) => void
-}
-
-export function CommandMenu({ open, onOpenChange }: CommandMenuProps) {
-  const router = useRouter()
-  const { setTheme } = useTheme()
-
-  const run = React.useCallback(
-    (fn: () => void) => {
-      onOpenChange(false)
-      // Defer to let the dialog close animation start.
-      requestAnimationFrame(fn)
-    },
-    [onOpenChange],
-  )
-
-  return (
-    <CommandDialog open={open} onOpenChange={onOpenChange}>
-      <CommandInput placeholder="Search or run a command…" />
-      <CommandList>
-        <CommandEmpty>No results found.</CommandEmpty>
-        <CommandGroup heading="Navigate">
-          {navItems.map((item) => {
-            const Icon = item.icon
-            return (
-              <CommandItem
-                key={item.href}
-                onSelect={() => run(() => router.push(item.href))}
-                value={`navigate ${item.title}`}
-              >
-                <Icon className="h-4 w-4" />
-                <span>{item.title}</span>
-              </CommandItem>
-            )
-          })}
-        </CommandGroup>
-        <CommandSeparator />
-        <CommandGroup heading="Actions">
-          <CommandItem
-            onSelect={() => run(() => router.push('/transactions?new=1'))}
-            value="new transaction add create"
-          >
-            <Plus className="h-4 w-4" />
-            <span>New transaction</span>
-            <CommandShortcut>⌘N</CommandShortcut>
-          </CommandItem>
-          <CommandItem
-            onSelect={() => run(() => router.push('/transactions'))}
-            value="search filter transactions"
-          >
-            <Search className="h-4 w-4" />
-            <span>Search transactions</span>
-          </CommandItem>
-        </CommandGroup>
-        <CommandSeparator />
-        <CommandGroup heading="Theme">
-          <CommandItem onSelect={() => run(() => setTheme('light'))} value="theme light">
-            <Sun className="h-4 w-4" />
-            <span>Light</span>
-          </CommandItem>
-          <CommandItem onSelect={() => run(() => setTheme('dark'))} value="theme dark">
-            <Moon className="h-4 w-4" />
-            <span>Dark</span>
-          </CommandItem>
-          <CommandItem onSelect={() => run(() => setTheme('system'))} value="theme system">
-            <Monitor className="h-4 w-4" />
-            <span>System</span>
-          </CommandItem>
-        </CommandGroup>
-      </CommandList>
-    </CommandDialog>
-  )
-}
+// Dynamic import keeps cmdk + the command palette UI out of the initial JS
+// bundle on every authenticated page. The chunk only loads the first time
+// the user opens the menu (⌘K or trigger click).
+const CommandMenu = dynamic(() => import('./command-menu-dialog'), {
+  ssr: false,
+})
 
 /**
  * Provider mount point: listens for ⌘K / Ctrl+K and renders the palette.
+ * The palette component is only mounted once `open` flips to true, so its
+ * JS chunk isn't downloaded until the user actually needs it.
  */
 export function CommandMenuProvider() {
   const [open, setOpen] = React.useState(false)
@@ -109,6 +30,7 @@ export function CommandMenuProvider() {
     return () => window.removeEventListener('keydown', handler)
   }, [])
 
+  if (!open) return null
   return <CommandMenu open={open} onOpenChange={setOpen} />
 }
 
@@ -136,11 +58,18 @@ export function CommandMenuTrigger() {
     return () => window.removeEventListener('keydown', handler)
   }, [])
 
+  // Pre-warm the dynamic chunk on hover/focus so the first open feels instant.
+  const prefetch = React.useCallback(() => {
+    void import('./command-menu-dialog')
+  }, [])
+
   return (
     <>
       <button
         type="button"
         onClick={() => setOpen(true)}
+        onMouseEnter={prefetch}
+        onFocus={prefetch}
         aria-label="Open command menu"
         className="hidden h-10 items-center gap-2 rounded-xl border border-border bg-card px-3 text-sm text-muted-foreground shadow-card transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40 focus-visible:ring-offset-2 sm:inline-flex"
       >
@@ -150,7 +79,7 @@ export function CommandMenuTrigger() {
           <span className="text-[11px] -mb-1">{isMac ? '⌘' : 'Ctrl'} K</span>
         </kbd>
       </button>
-      <CommandMenu open={open} onOpenChange={setOpen} />
+      {open && <CommandMenu open={open} onOpenChange={setOpen} />}
     </>
   )
 }

@@ -22,5 +22,11 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico|.*\\.png$).*)'],
+  // Middleware gates page navigation only. API routes self-authenticate via
+  // getAuthUser(). Static assets (images, fonts, icons) must never hit the
+  // middleware — they’re public and re-verifying JWT on every request wastes
+  // TTFB and blows up the middleware invocation count.
+  matcher: [
+    '/((?!api|_next/static|_next/image|favicon\\.ico|.*\\.(?:png|jpe?g|webp|avif|gif|svg|ico|woff2?)$).*)',
+  ],
 }

@@ -1,6 +1,6 @@
-import { getAuthUser } from '@/lib/auth'
+import { getAuthUser, getUserDisplayName } from '@/lib/auth'
 import { db } from '@/db'
-import { transactions, accounts, budgets, savingsEntries, users } from '@/db/schema'
+import { transactions, accounts, budgets, savingsEntries } from '@/db/schema'
 import { and, eq, gte, lt, sql } from 'drizzle-orm'
 import Link from 'next/link'
 import { ArrowUpRight, CalendarDays } from 'lucide-react'
@@ -41,27 +41,31 @@ async function getMainBalance(userId: string): Promise<number> {
 
   // Legacy user — compute balance from existing data and create account
   // Only SPENDING budgets add to balance. INCOME_GOAL budgets are targets only.
-  const [budgetTotals] = await db
-    .select({
-      total: sql<string>`COALESCE(SUM(${budgets.limit}), 0)`,
-    })
-    .from(budgets)
-    .where(and(eq(budgets.userId, userId), eq(budgets.type, 'SPENDING')))
+  // These three aggregates are independent — fire them in parallel instead
+  // of awaiting sequentially.
+  const [[budgetTotals], [txTotals], [savingsTotals]] = await Promise.all([
+    db
+      .select({
+        total: sql<string>`COALESCE(SUM(${budgets.limit}), 0)`,
+      })
+      .from(budgets)
+      .where(and(eq(budgets.userId, userId), eq(budgets.type, 'SPENDING'))),
 
-  const [txTotals] = await db
-    .select({
-      income: sql<string>`COALESCE(SUM(CASE WHEN type = 'INCOME' THEN amount ELSE 0 END), 0)`,
-      expense: sql<string>`COALESCE(SUM(CASE WHEN type = 'EXPENSE' THEN amount ELSE 0 END), 0)`,
-    })
-    .from(transactions)
-    .where(eq(transactions.userId, userId))
+    db
+      .select({
+        income: sql<string>`COALESCE(SUM(CASE WHEN type = 'INCOME' THEN amount ELSE 0 END), 0)`,
+        expense: sql<string>`COALESCE(SUM(CASE WHEN type = 'EXPENSE' THEN amount ELSE 0 END), 0)`,
+      })
+      .from(transactions)
+      .where(eq(transactions.userId, userId)),
 
-  const [savingsTotals] = await db
-    .select({
-      total: sql<string>`COALESCE(SUM(${savingsEntries.amount}), 0)`,
-    })
-    .from(savingsEntries)
-    .where(eq(savingsEntries.userId, userId))
+    db
+      .select({
+        total: sql<string>`COALESCE(SUM(${savingsEntries.amount}), 0)`,
+      })
+      .from(savingsEntries)
+      .where(eq(savingsEntries.userId, userId)),
+  ])
 
   const computedBalance =
     Number(budgetTotals?.total ?? 0) +
@@ -91,38 +95,46 @@ export default async function DashboardPage() {
   const nextMonthStart = new Date(now.getFullYear(), now.getMonth() + 1, 1)
   const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1)
 
-  // Main balance — source of truth from accounts table
-  const totalBalance = await getMainBalance(user.userId)
+  // All four values are independent — parallelize them. Previously this was
+  // three sequential awaits (~3x DB round-trip).
+  const [totalBalance, thisMonthResult, prevMonthResult, displayName] =
+    await Promise.all([
+      getMainBalance(user.userId),
 
-  // This month
-  const [thisMonth] = await db
-    .select({
-      income: sql<string>`COALESCE(SUM(CASE WHEN type = 'INCOME' THEN amount ELSE 0 END), 0)`,
-      expense: sql<string>`COALESCE(SUM(CASE WHEN type = 'EXPENSE' THEN amount ELSE 0 END), 0)`,
-    })
-    .from(transactions)
-    .where(
-      and(
-        eq(transactions.userId, user.userId),
-        gte(transactions.date, thisMonthStart),
-        lt(transactions.date, nextMonthStart),
-      ),
-    )
+      db
+        .select({
+          income: sql<string>`COALESCE(SUM(CASE WHEN type = 'INCOME' THEN amount ELSE 0 END), 0)`,
+          expense: sql<string>`COALESCE(SUM(CASE WHEN type = 'EXPENSE' THEN amount ELSE 0 END), 0)`,
+        })
+        .from(transactions)
+        .where(
+          and(
+            eq(transactions.userId, user.userId),
+            gte(transactions.date, thisMonthStart),
+            lt(transactions.date, nextMonthStart),
+          ),
+        ),
 
-  // Previous month
-  const [prevMonth] = await db
-    .select({
-      income: sql<string>`COALESCE(SUM(CASE WHEN type = 'INCOME' THEN amount ELSE 0 END), 0)`,
-      expense: sql<string>`COALESCE(SUM(CASE WHEN type = 'EXPENSE' THEN amount ELSE 0 END), 0)`,
-    })
-    .from(transactions)
-    .where(
-      and(
-        eq(transactions.userId, user.userId),
-        gte(transactions.date, lastMonthStart),
-        lt(transactions.date, thisMonthStart),
-      ),
-    )
+      db
+        .select({
+          income: sql<string>`COALESCE(SUM(CASE WHEN type = 'INCOME' THEN amount ELSE 0 END), 0)`,
+          expense: sql<string>`COALESCE(SUM(CASE WHEN type = 'EXPENSE' THEN amount ELSE 0 END), 0)`,
+        })
+        .from(transactions)
+        .where(
+          and(
+            eq(transactions.userId, user.userId),
+            gte(transactions.date, lastMonthStart),
+            lt(transactions.date, thisMonthStart),
+          ),
+        ),
+
+      // Deduped with the same call in the dashboard layout via React.cache.
+      getUserDisplayName(user.userId, user.email),
+    ])
+
+  const thisMonth = thisMonthResult[0]
+  const prevMonth = prevMonthResult[0]
 
   const curIncome = Number(thisMonth?.income ?? 0)
   const curExpense = Number(thisMonth?.expense ?? 0)
@@ -135,18 +147,6 @@ export default async function DashboardPage() {
   const incomeDelta = pctDelta(curIncome, prvIncome)
   const expenseDelta = pctDelta(curExpense, prvExpense)
 
-  const emailPrefix = user.email?.split('@')[0] ?? 'there'
-
-  // Pull the display name from the users table — JWT only carries userId + email
-  const [userRow] = await db
-    .select({ name: users.name })
-    .from(users)
-    .where(eq(users.id, user.userId))
-    .limit(1)
-
-  const displayName =
-    userRow?.name?.trim() ||
-    emailPrefix.charAt(0).toUpperCase() + emailPrefix.slice(1)
   const todayPretty = new Intl.DateTimeFormat('en-US', {
     day: 'numeric',
     month: 'long',

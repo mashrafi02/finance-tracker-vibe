@@ -1,5 +1,9 @@
 import { SignJWT, jwtVerify } from 'jose'
 import { cookies } from 'next/headers'
+import { cache } from 'react'
+import { eq } from 'drizzle-orm'
+import { db } from '@/db'
+import { users } from '@/db/schema'
 
 const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET!)
 const COOKIE_NAME = 'auth-token'
@@ -37,15 +41,40 @@ export async function verifyToken(token: string): Promise<JWTPayload | null> {
 
 /**
  * Read the auth cookie and return the verified JWT payload.
- * Use this in every protected API route handler.
+ * Use this in every protected API route handler and Server Component.
  * Returns null if unauthenticated or token is expired.
+ *
+ * Wrapped in React.cache so a single request that calls this from a layout
+ * AND a page (common in the dashboard) only verifies the JWT once.
  */
-export async function getAuthUser(): Promise<JWTPayload | null> {
-  const cookieStore = await cookies()
-  const token = cookieStore.get(COOKIE_NAME)?.value
-  if (!token) return null
-  return verifyToken(token)
-}
+export const getAuthUser = cache(
+  async (): Promise<JWTPayload | null> => {
+    const cookieStore = await cookies()
+    const token = cookieStore.get(COOKIE_NAME)?.value
+    if (!token) return null
+    return verifyToken(token)
+  },
+)
+
+/**
+ * Fetch the user's display name from the database.
+ * Cached per-request so layout + page don't run the same query twice.
+ */
+export const getUserDisplayName = cache(
+  async (userId: string, email: string): Promise<string> => {
+    const [row] = await db
+      .select({ name: users.name })
+      .from(users)
+      .where(eq(users.id, userId))
+      .limit(1)
+
+    const emailPrefix = email.split('@')[0] ?? ''
+    return (
+      row?.name?.trim() ||
+      emailPrefix.charAt(0).toUpperCase() + emailPrefix.slice(1)
+    )
+  },
+)
 
 /**
  * Returns a cookie config object for setting the auth cookie.

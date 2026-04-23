@@ -17,7 +17,13 @@ export async function GET() {
       .where(eq(categories.userId, user.userId))
       .orderBy(categories.name)
 
-    return Response.json(rows)
+    // Categories change rarely. SWR will force a fresh fetch after mutations
+    // via mutate(); this header just lets repeat navigations skip the DB.
+    return Response.json(rows, {
+      headers: {
+        'Cache-Control': 'private, max-age=30, stale-while-revalidate=300',
+      },
+    })
   } catch (error) {
     console.error('[GET /api/categories]', error)
     return Response.json({ error: 'Internal server error' }, { status: 500 })

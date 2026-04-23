@@ -1,5 +1,3 @@
-'use client'
-
 import { ReportsTable } from '@/components/reports/reports-table'
 import {
   Card,

@@ -5,6 +5,7 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useMemo,
   useState,
 } from 'react'
 import { formatCurrency as formatCurrencyUtil } from '@/lib/utils'
@@ -45,8 +46,16 @@ export function CurrencyProvider({ children }: { children: React.ReactNode }) {
     [currency],
   )
 
+  // Stable identity — otherwise every ancestor re-render forces every
+  // consumer of useCurrency() to re-render, even if the currency didn't
+  // change.
+  const value = useMemo(
+    () => ({ currency, setCurrency, formatCurrency }),
+    [currency, setCurrency, formatCurrency],
+  )
+
   return (
-    <CurrencyContext.Provider value={{ currency, setCurrency, formatCurrency }}>
+    <CurrencyContext.Provider value={value}>
       {children}
     </CurrencyContext.Provider>
   )
