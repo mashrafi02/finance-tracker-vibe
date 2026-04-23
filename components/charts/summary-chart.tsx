@@ -31,6 +31,7 @@ import {
 } from '@/components/ui/chart'
 import { Skeleton } from '@/components/ui/skeleton'
 import { cn, fetcher } from '@/lib/utils'
+import { useCurrency } from '@/contexts/currency-context'
 
 type Range = 'weekly' | 'monthly' | 'yearly'
 
@@ -74,6 +75,8 @@ function formatPeriodLabel(period: string, range: Range): string {
 }
 
 export function SummaryChart() {
+  const { formatCurrency, currency } = useCurrency()
+  const currencySymbol = currency === 'BDT' ? '৳' : '$'
   const [range, setRange] = useState<Range>('weekly')
 
   const { data, error, isLoading } = useSWR<SummaryResponse>(
@@ -163,14 +166,14 @@ export function SummaryChart() {
                 axisLine={false}
                 tickMargin={8}
                 tick={{ fontSize: 11, fill: 'var(--muted-foreground)' }}
-                tickFormatter={(value) => `$${value}`}
+                tickFormatter={(value) => `${currencySymbol}${value}`}
               />
               <ChartTooltip
                 content={
                   <ChartTooltipContent
                     formatter={(value, name) => (
                       <span>
-                        {name}: ${Number(value).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                        {name}: {formatCurrency(Number(value))}
                       </span>
                     )}
                   />

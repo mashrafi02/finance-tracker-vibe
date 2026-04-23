@@ -10,7 +10,8 @@ import {
   ChartTooltipContent,
 } from '@/components/ui/chart'
 import { Skeleton } from '@/components/ui/skeleton'
-import { formatCurrency, cn } from '@/lib/utils'
+import { cn } from '@/lib/utils'
+import { useCurrency } from '@/contexts/currency-context'
 
 interface BudgetPerformanceCardProps {
   totalBudget: number
@@ -52,6 +53,7 @@ export function BudgetPerformanceCard({
   percentageUsed,
   isLoading,
 }: BudgetPerformanceCardProps) {
+  const { formatCurrency } = useCurrency()
   const isOver = percentageUsed >= 100
   const isWarn = percentageUsed >= 80 && !isOver
   const remaining = Math.max(0, totalBudget - totalSpent)
@@ -166,7 +168,17 @@ export function BudgetPerformanceCard({
                   </PolarRadiusAxis>
                   <ChartTooltip
                     cursor={false}
-                    content={<ChartTooltipContent hideLabel />}
+                    content={
+                      <ChartTooltipContent
+                        hideLabel
+                        formatter={() => (
+                          <div className="flex flex-col gap-1 text-xs">
+                            <span>{formatCurrency(totalSpent)} spent</span>
+                            <span className="text-muted-foreground">of {formatCurrency(totalBudget)}</span>
+                          </div>
+                        )}
+                      />
+                    }
                   />
                   <RadialBar
                     dataKey="value"

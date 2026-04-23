@@ -3,10 +3,11 @@
 import { Button } from '@/components/ui/button'
 import { AlertTriangle, ArrowRight } from 'lucide-react'
 import { useOverspentCategories } from '@/hooks/use-budgets'
-import { formatCurrency } from '@/lib/utils'
+import { useCurrency } from '@/contexts/currency-context'
 import Link from 'next/link'
 
 export function OverspentBudgetAlert() {
+  const { formatCurrency } = useCurrency()
   const { overspentCategories, isLoading, hasOverspent } = useOverspentCategories()
 
   if (isLoading || !hasOverspent) {

@@ -7,7 +7,8 @@ import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { EmptyState } from '@/components/ui/empty-state'
 import { useRecentSavings } from '@/hooks/use-recent-savings'
-import { formatCurrency, formatDate } from '@/lib/utils'
+import { formatDate } from '@/lib/utils'
+import { useCurrency } from '@/contexts/currency-context'
 
 interface RecentSavingsCardProps {
   limit?: number
@@ -18,6 +19,7 @@ export function RecentSavingsCard({
   limit = 8,
   showSeeAll = false,
 }: RecentSavingsCardProps) {
+  const { formatCurrency } = useCurrency()
   const { entries, isLoading, isError } = useRecentSavings(limit)
 
   return (

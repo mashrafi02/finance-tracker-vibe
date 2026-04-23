@@ -2,7 +2,7 @@ import { db } from '@/db'
 import { monthlyReports, transactions, categories, budgets, savingsEntries, savingsGoals, accounts } from '@/db/schema'
 import { getAuthUser } from '@/lib/auth'
 import { generateReportSchema } from '@/lib/validations/report'
-import { eq, and, gte, lte, sql } from 'drizzle-orm'
+import { eq, and, gte, lte, sql, count } from 'drizzle-orm'
 
 export async function POST(req: Request) {
   // 1. Authenticate
@@ -48,7 +48,38 @@ export async function POST(req: Request) {
     const startDate = new Date(year, m - 1, 1)
     const endDate = new Date(year, m, 0, 23, 59, 59, 999)
 
-    // 5. Fetch transactions with category details
+    // 5. Check that the user has at least some financial activity for this month
+    const [[txCount], [savingsCount]] = await Promise.all([
+      db
+        .select({ n: count() })
+        .from(transactions)
+        .where(
+          and(
+            eq(transactions.userId, user.userId),
+            gte(transactions.date, startDate),
+            lte(transactions.date, endDate),
+          ),
+        ),
+      db
+        .select({ n: count() })
+        .from(savingsEntries)
+        .where(
+          and(
+            eq(savingsEntries.userId, user.userId),
+            gte(savingsEntries.date, startDate),
+            lte(savingsEntries.date, endDate),
+          ),
+        ),
+    ])
+
+    if ((txCount?.n ?? 0) === 0 && (savingsCount?.n ?? 0) === 0) {
+      return Response.json(
+        { error: 'No activity found for this month. Add some transactions or savings entries before generating a report.' },
+        { status: 422 },
+      )
+    }
+
+    // 6. Fetch transactions with category details
     const transactionsData = await db
       .select({
         id: transactions.id,

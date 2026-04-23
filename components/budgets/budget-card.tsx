@@ -12,7 +12,8 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { type BudgetStatus } from '@/hooks/use-budgets'
-import { formatCurrency, cn } from '@/lib/utils'
+import { cn } from '@/lib/utils'
+import { useCurrency } from '@/contexts/currency-context'
 
 interface BudgetCardProps {
   budget: BudgetStatus
@@ -27,6 +28,7 @@ export function BudgetCard({
   onDelete,
   onAddFunds,
 }: BudgetCardProps) {
+  const { formatCurrency } = useCurrency()
   const limit = budget.limit ?? 0
   const percent = Math.round(budget.percentageUsed ?? 0)
   const isIncome = budget.type === 'INCOME_GOAL'
@@ -232,6 +234,7 @@ interface EmptyBudgetSlotProps {
  * Smaller than `BudgetCard` to keep the grid breathable.
  */
 export function EmptyBudgetSlot({ budget, onCreate }: EmptyBudgetSlotProps) {
+  const { formatCurrency } = useCurrency()
   const isIncome = budget.type === 'INCOME_GOAL'
   return (
     <button

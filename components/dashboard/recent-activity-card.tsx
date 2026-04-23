@@ -7,9 +7,11 @@ import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { EmptyState } from '@/components/ui/empty-state'
 import { useRecentTransactions } from '@/hooks/use-recent-transactions'
-import { formatCurrency, formatDate, cn } from '@/lib/utils'
+import { formatDate, cn } from '@/lib/utils'
+import { useCurrency } from '@/contexts/currency-context'
 
 export function RecentActivityCard() {
+  const { formatCurrency } = useCurrency()
   const { transactions, isLoading, isError } = useRecentTransactions(5)
 
   return (

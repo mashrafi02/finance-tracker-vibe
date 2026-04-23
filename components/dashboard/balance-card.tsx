@@ -1,6 +1,9 @@
+'use client'
+
 import { Wallet } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
-import { formatCurrency, cn } from '@/lib/utils'
+import { cn } from '@/lib/utils'
+import { useCurrency } from '@/contexts/currency-context'
 import { DeltaChip } from './delta-chip'
 
 interface BalanceCardProps {
@@ -10,6 +13,7 @@ interface BalanceCardProps {
 }
 
 export function BalanceCard({ totalBalance, delta, periodLabel }: BalanceCardProps) {
+  const { formatCurrency } = useCurrency()
   return (
     <Card className="h-full">
       <CardContent className="flex h-full flex-col gap-4 p-5">

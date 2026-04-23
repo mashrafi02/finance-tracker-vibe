@@ -9,7 +9,7 @@ import {
 } from '@/components/ui/dialog'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useReport } from '@/hooks/use-reports'
-import { formatCurrency } from '@/lib/utils'
+import { useCurrency } from '@/contexts/currency-context'
 import { AlertCircle } from 'lucide-react'
 
 interface ReportViewDialogProps {
@@ -29,6 +29,7 @@ export function ReportViewDialog({
   onOpenChange,
   reportId,
 }: ReportViewDialogProps) {
+  const { formatCurrency } = useCurrency()
   const { report, isLoading, isError } = useReport(isOpen ? reportId : null)
 
   return (

@@ -33,6 +33,7 @@ import {
 } from '@/components/ui/chart'
 import { Skeleton } from '@/components/ui/skeleton'
 import { fetcher } from '@/lib/utils'
+import { useCurrency } from '@/contexts/currency-context'
 
 type Range = 'weekly' | 'monthly' | 'yearly'
 
@@ -73,6 +74,8 @@ function formatPeriodLabel(period: string, range: Range): string {
 }
 
 export function IncomeExpenseBarChart() {
+  const { formatCurrency, currency } = useCurrency()
+  const currencySymbol = currency === 'BDT' ? '৳' : '$'
   const [range, setRange] = useState<Range>('weekly')
 
   const { data, error, isLoading } = useSWR<SummaryResponse>(
@@ -139,9 +142,9 @@ export function IncomeExpenseBarChart() {
                 axisLine={false}
                 tickMargin={8}
                 tick={{ fontSize: 11, fill: 'var(--muted-foreground)' }}
-                tickFormatter={(value) => `$${value}`}
+                tickFormatter={(value) => `${currencySymbol}${value}`}
               />
-              <ChartTooltip content={<ChartTooltipContent />} />
+              <ChartTooltip content={<ChartTooltipContent formatter={(value) => formatCurrency(Number(value))} />} />
               <ChartLegend content={<ChartLegendContent />} />
               <Bar dataKey="income" fill="var(--chart-3)" radius={[6, 6, 0, 0]} />
               <Bar dataKey="expense" fill="var(--chart-1)" radius={[6, 6, 0, 0]} />

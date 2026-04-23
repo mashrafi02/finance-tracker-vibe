@@ -2,7 +2,8 @@
 
 import { Skeleton } from '@/components/ui/skeleton'
 import { Card, CardContent } from '@/components/ui/card'
-import { formatCurrency, cn } from '@/lib/utils'
+import { cn } from '@/lib/utils'
+import { useCurrency } from '@/contexts/currency-context'
 
 interface StatCardProps {
   title: string
@@ -27,6 +28,7 @@ export function StatCard({
   valueColorClass,
   isLoading,
 }: StatCardProps) {
+  const { formatCurrency } = useCurrency()
   const displayValue = isCurrency
     ? formatCurrency(value)
     : `${value}${suffix ?? ''}`

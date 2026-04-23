@@ -38,7 +38,8 @@ import {
 } from '@/components/ui/input-group'
 import { Button } from '@/components/ui/button'
 import { useBudgets, type BudgetStatus, type BudgetType } from '@/hooks/use-budgets'
-import { formatCurrency, cn } from '@/lib/utils'
+import { cn } from '@/lib/utils'
+import { useCurrency } from '@/contexts/currency-context'
 
 const budgetFormSchema = z.object({
   categoryId: z.string().min(1, 'Pick a category'),
@@ -79,6 +80,7 @@ export function BudgetSheet({
   budget,
   defaultType = 'SPENDING',
 }: BudgetSheetProps) {
+  const { formatCurrency } = useCurrency()
   // Treat as "edit" only when an existing budgetId is present.
   // A passed-in budget without budgetId is treated as a prefilled "create".
   const isEditing = Boolean(budget?.budgetId)

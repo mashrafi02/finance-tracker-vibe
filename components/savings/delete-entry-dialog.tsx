@@ -14,7 +14,7 @@ import {
 } from '@/components/ui/alert-dialog'
 import { Loader2 } from 'lucide-react'
 import { useSavingsEntries, type SavingsEntry } from '@/hooks/use-savings-entries'
-import { formatCurrency } from '@/lib/utils'
+import { useCurrency } from '@/contexts/currency-context'
 
 interface DeleteEntryDialogProps {
   goalId: string
@@ -29,6 +29,7 @@ export function DeleteEntryDialog({
   open,
   onOpenChange,
 }: DeleteEntryDialogProps) {
+  const { formatCurrency } = useCurrency()
   const [isDeleting, setIsDeleting] = useState(false)
   const { deleteEntry } = useSavingsEntries(goalId)
 

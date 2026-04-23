@@ -32,7 +32,8 @@ import {
   Trash2,
   Wallet,
 } from 'lucide-react'
-import { cn, formatCurrency, formatDate } from '@/lib/utils'
+import { cn, formatDate } from '@/lib/utils'
+import { useCurrency } from '@/contexts/currency-context'
 import type { SavingsEntry } from '@/hooks/use-savings-entries'
 
 interface EntriesTableProps {
@@ -48,6 +49,7 @@ export function EntriesTable({
   onEdit,
   onDelete,
 }: EntriesTableProps) {
+  const { formatCurrency } = useCurrency()
   const [sorting, setSorting] = useState<SortingState>([
     { id: 'date', desc: true },
   ])
@@ -137,7 +139,7 @@ export function EntriesTable({
         ),
       },
     ],
-    [sorting, onEdit, onDelete],
+    [sorting, onEdit, onDelete, formatCurrency],
   )
 
   const table = useReactTable({

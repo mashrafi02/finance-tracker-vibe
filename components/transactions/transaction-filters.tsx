@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { format } from 'date-fns'
-import { CalendarIcon, Search, Filter, X, Check, ChevronsUpDown } from 'lucide-react'
+import { CalendarIcon, Search, X, Check, ChevronsUpDown } from 'lucide-react'
 import {
   Popover,
   PopoverContent,
@@ -18,7 +18,6 @@ import {
   CommandItem,
   CommandList,
 } from '@/components/ui/command'
-import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
   Select,
@@ -27,9 +26,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Badge } from '@/components/ui/badge'
-import { Card, CardContent } from '@/components/ui/card'
-import { buttonVariants } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 
 interface Category {
@@ -108,192 +104,168 @@ export function TransactionFilters({ categories }: TransactionFiltersProps) {
   }
 
   return (
-    <Card>
-      <CardContent className="p-5">
-        <div className="flex flex-col space-y-5">
-          {/* Header */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-muted text-muted-foreground">
-                <Filter className="h-4 w-4" />
-              </span>
-              <h3 className="text-sm font-semibold tracking-wide">Filters</h3>
-            </div>
-            {hasActiveFilters && (
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={clearFilters}
-                className="text-muted-foreground hover:text-foreground"
-              >
-                <X className="mr-1 h-3 w-3" />
-                Clear
-              </Button>
-            )}
-          </div>
-
-          {/* Filters Grid */}
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-5">
-            {/* Search */}
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                placeholder="Search transactions..."
-                value={currentFilters.description}
-                onChange={(e) => updateFilters({ description: e.target.value })}
-                className="pl-9"
-              />
-            </div>
-
-            {/* Date From */}
-            <Popover open={dateFromOpen} onOpenChange={setDateFromOpen}>
-              <PopoverTrigger
-                className={cn(
-                  buttonVariants({ variant: 'outline' }),
-                  'w-full justify-start text-left font-medium',
-                  !dateFrom && 'text-muted-foreground'
-                )}
-              >
-                <CalendarIcon className="mr-2 h-4 w-4" />
-                {dateFrom ? format(dateFrom, 'MMM d, yyyy') : 'From date'}
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  mode="single"
-                  selected={dateFrom}
-                  onSelect={(date) => {
-                    updateFilters({ from: date ? format(date, 'yyyy-MM-dd') : '' })
-                    setDateFromOpen(false)
-                  }}
-                  disabled={(date) => {
-                    const today = new Date()
-                    const isAfterToday = date > today
-                    const isAfterToDate = dateTo ? date > dateTo : false
-                    return isAfterToday || isAfterToDate
-                  }}
-                  initialFocus
-                />
-              </PopoverContent>
-            </Popover>
-
-            {/* Date To */}
-            <Popover open={dateToOpen} onOpenChange={setDateToOpen}>
-              <PopoverTrigger
-                className={cn(
-                  buttonVariants({ variant: 'outline' }),
-                  'w-full justify-start text-left font-medium',
-                  !dateTo && 'text-muted-foreground'
-                )}
-              >
-                <CalendarIcon className="mr-2 h-4 w-4" />
-                {dateTo ? format(dateTo, 'MMM d, yyyy') : 'To date'}
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  mode="single"
-                  selected={dateTo}
-                  onSelect={(date) => {
-                    updateFilters({ to: date ? format(date, 'yyyy-MM-dd') : '' })
-                    setDateToOpen(false)
-                  }}
-                  disabled={(date) => {
-                    const today = new Date()
-                    const isAfterToday = date > today
-                    const isBeforeFromDate = dateFrom ? date < dateFrom : false
-                    return isAfterToday || isBeforeFromDate
-                  }}
-                  initialFocus
-                />
-              </PopoverContent>
-            </Popover>
-
-            {/* Type Filter */}
-            <Select
-              value={currentFilters.type}
-              onValueChange={(value) => updateFilters({ type: value === 'all' ? '' : value || '' })}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="All types" />
-              </SelectTrigger>
-              <SelectContent className="p-2 h-26!">
-                <SelectItem value="all">All types</SelectItem>
-                <SelectItem value="INCOME">Income</SelectItem>
-                <SelectItem value="EXPENSE">Expense</SelectItem>
-              </SelectContent>
-            </Select>
-
-            {/* Categories Multi-Select */}
-            <Popover open={categoriesOpen} onOpenChange={setCategoriesOpen}>
-              <PopoverTrigger
-                role="combobox"
-                aria-expanded={categoriesOpen}
-                className={cn(
-                  buttonVariants({ variant: 'outline' }),
-                  'w-full justify-between font-medium'
-                )}
-              >
-                {selectedCategories.length > 0
-                  ? `${selectedCategories.length} selected`
-                  : 'All categories'}
-                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-              </PopoverTrigger>
-              <PopoverContent className="w-[300px] p-0">
-                <Command>
-                  <CommandInput placeholder="Search categories..." />
-                  <CommandEmpty>No categories found.</CommandEmpty>
-                  <CommandList>
-                    <CommandGroup>
-                      {categories.map((category) => (
-                        <CommandItem
-                          key={category.id}
-                          onSelect={() => toggleCategory(category.id)}
-                          className="cursor-pointer"
-                        >
-                          <Check
-                            className={cn(
-                              "mr-2 h-4 w-4",
-                              selectedCategories.includes(category.id)
-                                ? "opacity-100"
-                                : "opacity-0"
-                            )}
-                          />
-                          <span className="mr-2">{category.icon}</span>
-                          <span>{category.name}</span>
-                        </CommandItem>
-                      ))}
-                    </CommandGroup>
-                  </CommandList>
-                </Command>
-              </PopoverContent>
-            </Popover>
-          </div>
-
-          {/* Selected Categories Display */}
-          {selectedCategoriesData.length > 0 && (
-            <div className="flex flex-wrap gap-2">
-              {selectedCategoriesData.map((category) => (
-                <Badge
-                  key={category.id}
-                  variant="secondary"
-                  className="h-7 pr-1"
-                  style={{ backgroundColor: `${category.color}20`, color: category.color }}
-                >
-                  <span className="mr-1">{category.icon}</span>
-                  {category.name}
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="ml-1 h-4 w-4 p-0 hover:bg-transparent"
-                    onClick={() => toggleCategory(category.id)}
-                  >
-                    <X className="h-3 w-3" />
-                  </Button>
-                </Badge>
-              ))}
-            </div>
-          )}
+    <div className="space-y-3">
+      <div className="flex flex-wrap items-center gap-2">
+        {/* Search */}
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            placeholder="Search..."
+            value={currentFilters.description}
+            onChange={(e) => updateFilters({ description: e.target.value })}
+            className="h-9 w-44 rounded-full border-border/60 bg-card pl-8 text-sm shadow-xs focus-visible:ring-1"
+          />
         </div>
-      </CardContent>
-    </Card>
+
+        {/* Date From */}
+        <Popover open={dateFromOpen} onOpenChange={setDateFromOpen}>
+          <PopoverTrigger
+            className={cn(
+              'inline-flex h-9 items-center gap-1.5 rounded-full border border-border/60 bg-card px-3.5 text-sm font-medium shadow-xs transition-colors hover:bg-muted',
+              !dateFrom && 'text-muted-foreground'
+            )}
+          >
+            <CalendarIcon className="h-3.5 w-3.5" />
+            {dateFrom ? format(dateFrom, 'MMM d, yyyy') : 'From date'}
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0" align="start">
+            <Calendar
+              mode="single"
+              selected={dateFrom}
+              onSelect={(date) => {
+                updateFilters({ from: date ? format(date, 'yyyy-MM-dd') : '' })
+                setDateFromOpen(false)
+              }}
+              disabled={(date) => {
+                const today = new Date()
+                const isAfterToday = date > today
+                const isAfterToDate = dateTo ? date > dateTo : false
+                return isAfterToday || isAfterToDate
+              }}
+              initialFocus
+            />
+          </PopoverContent>
+        </Popover>
+
+        {/* Date To */}
+        <Popover open={dateToOpen} onOpenChange={setDateToOpen}>
+          <PopoverTrigger
+            className={cn(
+              'inline-flex h-9 items-center gap-1.5 rounded-full border border-border/60 bg-card px-3.5 text-sm font-medium shadow-xs transition-colors hover:bg-muted',
+              !dateTo && 'text-muted-foreground'
+            )}
+          >
+            <CalendarIcon className="h-3.5 w-3.5" />
+            {dateTo ? format(dateTo, 'MMM d, yyyy') : 'To date'}
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0" align="start">
+            <Calendar
+              mode="single"
+              selected={dateTo}
+              onSelect={(date) => {
+                updateFilters({ to: date ? format(date, 'yyyy-MM-dd') : '' })
+                setDateToOpen(false)
+              }}
+              disabled={(date) => {
+                const today = new Date()
+                const isAfterToday = date > today
+                const isBeforeFromDate = dateFrom ? date < dateFrom : false
+                return isAfterToday || isBeforeFromDate
+              }}
+              initialFocus
+            />
+          </PopoverContent>
+        </Popover>
+
+        {/* Type Filter */}
+        <Select
+          value={currentFilters.type}
+          onValueChange={(value) => updateFilters({ type: value === 'all' ? '' : value || '' })}
+        >
+          <SelectTrigger className="h-9 w-32 rounded-full border-border/60 bg-card shadow-xs">
+            <SelectValue placeholder="All types" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All types</SelectItem>
+            <SelectItem value="INCOME">Income</SelectItem>
+            <SelectItem value="EXPENSE">Expense</SelectItem>
+          </SelectContent>
+        </Select>
+
+        {/* Categories Multi-Select */}
+        <Popover open={categoriesOpen} onOpenChange={setCategoriesOpen}>
+          <PopoverTrigger
+            role="combobox"
+            aria-expanded={categoriesOpen}
+            className="inline-flex h-9 items-center gap-1.5 rounded-full border border-border/60 bg-card px-3.5 text-sm font-medium shadow-xs transition-colors hover:bg-muted"
+          >
+            {selectedCategories.length > 0
+              ? `${selectedCategories.length} categor${selectedCategories.length === 1 ? 'y' : 'ies'}`
+              : 'All categories'}
+            <ChevronsUpDown className="h-3.5 w-3.5 shrink-0 opacity-50" />
+          </PopoverTrigger>
+          <PopoverContent className="w-[280px] p-0">
+            <Command>
+              <CommandInput placeholder="Search categories..." />
+              <CommandEmpty>No categories found.</CommandEmpty>
+              <CommandList>
+                <CommandGroup>
+                  {categories.map((category) => (
+                    <CommandItem
+                      key={category.id}
+                      onSelect={() => toggleCategory(category.id)}
+                      className="cursor-pointer"
+                    >
+                      <Check
+                        className={cn(
+                          'mr-2 h-4 w-4',
+                          selectedCategories.includes(category.id) ? 'opacity-100' : 'opacity-0',
+                        )}
+                      />
+                      <span className="mr-2">{category.icon}</span>
+                      <span>{category.name}</span>
+                    </CommandItem>
+                  ))}
+                </CommandGroup>
+              </CommandList>
+            </Command>
+          </PopoverContent>
+        </Popover>
+
+        {/* Clear */}
+        {hasActiveFilters && (
+          <button
+            onClick={clearFilters}
+            className="inline-flex h-9 items-center gap-1.5 rounded-full border border-border/60 bg-card px-3.5 text-sm font-medium text-muted-foreground shadow-xs transition-colors hover:bg-muted hover:text-foreground"
+          >
+            <X className="h-3.5 w-3.5" />
+            Clear
+          </button>
+        )}
+      </div>
+
+      {/* Selected category chips */}
+      {selectedCategoriesData.length > 0 && (
+        <div className="flex flex-wrap gap-1.5">
+          {selectedCategoriesData.map((category) => (
+            <span
+              key={category.id}
+              className="inline-flex h-7 items-center gap-1.5 rounded-full border px-2.5 text-xs font-medium"
+              style={{ borderColor: `${category.color}40`, backgroundColor: `${category.color}15`, color: category.color }}
+            >
+              {category.icon}
+              {category.name}
+              <button
+                aria-label={`Remove ${category.name} filter`}
+                onClick={() => toggleCategory(category.id)}
+                className="ml-0.5 opacity-60 hover:opacity-100"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </span>
+          ))}
+        </div>
+      )}
+    </div>
   )
 }

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
+import useSWR from 'swr'
 import {
   ColumnDef,
   flexRender,
@@ -23,6 +24,7 @@ import { Button } from '@/components/ui/button'
 import { EmptyState } from '@/components/ui/empty-state'
 import { Plus, Eye, Trash2, Loader2, FileText } from 'lucide-react'
 import { useReports, type ReportListItem } from '@/hooks/use-reports'
+import { fetcher } from '@/lib/utils'
 import { ReportViewDialog } from './report-view-dialog'
 import { DeleteReportDialog } from './delete-report-dialog'
 
@@ -47,7 +49,7 @@ function getCurrentMonth() {
   return `${year}-${month}`
 }
 
-const GENERATE_LOCK_KEY = 'reports:lastGeneratedAt'
+const GENERATE_LOCK_BASE_KEY = 'reports:lastGeneratedAt'
 const GENERATE_LOCK_MS = 24 * 60 * 60 * 1000 // 24 hours
 
 function formatCountdown(ms: number) {
@@ -62,6 +64,9 @@ function formatCountdown(ms: number) {
 
 export function ReportsTable() {
   const { reports, isLoading, mutate } = useReports()
+  const { data: meData } = useSWR<{ userId: string }>('/api/auth/me', fetcher)
+  const userId = meData?.userId
+  const lockKey = userId ? `${GENERATE_LOCK_BASE_KEY}:${userId}` : null
   const [sorting, setSorting] = useState<SortingState>([])
   const [isGenerating, setIsGenerating] = useState(false)
   const [lockRemainingMs, setLockRemainingMs] = useState(0)
@@ -69,8 +74,8 @@ export function ReportsTable() {
   // Check & refresh the generation lock every minute
   useEffect(() => {
     const check = () => {
-      if (typeof window === 'undefined') return
-      const raw = window.localStorage.getItem(GENERATE_LOCK_KEY)
+      if (typeof window === 'undefined' || !lockKey) return
+      const raw = window.localStorage.getItem(lockKey)
       if (!raw) {
         setLockRemainingMs(0)
         return
@@ -87,7 +92,7 @@ export function ReportsTable() {
     check()
     const interval = setInterval(check, 60 * 1000)
     return () => clearInterval(interval)
-  }, [])
+  }, [lockKey])
 
   const isLocked = lockRemainingMs > 0
 
@@ -158,6 +163,8 @@ export function ReportsTable() {
         const data = await res.json().catch(() => ({}))
         if (res.status === 409) {
           toast.error(`A report for ${formatMonthLong(month)} already exists.`)
+        } else if (res.status === 422) {
+          toast.error("No activity this month yet. Add transactions or savings entries before generating a report.")
         } else {
           toast.error(data.error ?? 'Failed to generate report')
         }
@@ -165,8 +172,8 @@ export function ReportsTable() {
       }
 
       // Record the successful generation time to enforce the 24h lock
-      if (typeof window !== 'undefined') {
-        window.localStorage.setItem(GENERATE_LOCK_KEY, Date.now().toString())
+      if (typeof window !== 'undefined' && lockKey) {
+        window.localStorage.setItem(lockKey, Date.now().toString())
         setLockRemainingMs(GENERATE_LOCK_MS)
       }
 

@@ -24,7 +24,8 @@ import {
   ChartTooltipContent,
 } from '@/components/ui/chart'
 import { Skeleton } from '@/components/ui/skeleton'
-import { formatCurrency, fetcher } from '@/lib/utils'
+import { fetcher } from '@/lib/utils'
+import { useCurrency } from '@/contexts/currency-context'
 
 type Range = '7d' | '30d' | '90d' | '365d' | 'all'
 
@@ -121,15 +122,17 @@ function formatDateLabel(dateStr: string, range: Range): string {
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
 }
 
-function formatYAxis(v: number): string {
+function formatYAxis(v: number, symbol: string): string {
   const abs = Math.abs(v)
-  if (abs >= 1_000_000) return `$${(v / 1_000_000).toFixed(1)}M`
-  if (abs >= 1_000) return `$${(v / 1_000).toFixed(0)}k`
-  return `$${v.toFixed(0)}`
+  if (abs >= 1_000_000) return `${symbol}${(v / 1_000_000).toFixed(1)}M`
+  if (abs >= 1_000) return `${symbol}${(v / 1_000).toFixed(0)}k`
+  return `${symbol}${v.toFixed(0)}`
 }
 
 export function SavingsGrowthChart() {
-  const [range, setRange] = useState<Range>('90d')
+  const { formatCurrency, currency } = useCurrency()
+  const currencySymbol = currency === 'BDT' ? '৳' : '$'
+  const [range, setRange] = useState<Range>('7d')
 
   const { data: response, isLoading } = useSWR<OverviewResponse>(
     `/api/analytics/overview?range=${range}`,
@@ -210,7 +213,7 @@ export function SavingsGrowthChart() {
                 tickLine={false}
                 axisLine={false}
                 tick={{ fontSize: 11, fill: 'var(--muted-foreground)' }}
-                tickFormatter={formatYAxis}
+                tickFormatter={(v) => formatYAxis(v, currencySymbol)}
                 width={52}
               />
               <ChartTooltip

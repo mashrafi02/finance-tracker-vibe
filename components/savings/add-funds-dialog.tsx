@@ -33,7 +33,7 @@ import { Progress } from '@/components/ui/progress'
 import { Loader2, Wallet } from 'lucide-react'
 import { useSavingsEntries } from '@/hooks/use-savings-entries'
 import type { SavingsGoal } from '@/hooks/use-savings-goals'
-import { formatCurrency } from '@/lib/utils'
+import { useCurrency } from '@/contexts/currency-context'
 
 const addFundsSchema = z.object({
   amount: z
@@ -59,6 +59,7 @@ export function AddFundsDialog({
   open,
   onOpenChange,
 }: AddFundsDialogProps) {
+  const { formatCurrency } = useCurrency()
   const { createEntry } = useSavingsEntries(goal?.id ?? null)
 
   const form = useForm<AddFundsValues>({

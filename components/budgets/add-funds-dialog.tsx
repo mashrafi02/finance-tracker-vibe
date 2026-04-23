@@ -30,7 +30,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { Loader2, PiggyBank } from 'lucide-react'
 import { useBudgets, type BudgetStatus } from '@/hooks/use-budgets'
-import { formatCurrency } from '@/lib/utils'
+import { useCurrency } from '@/contexts/currency-context'
 
 const addFundsFormSchema = z.object({
   amount: z
@@ -57,6 +57,7 @@ export function AddFundsDialog({
   open,
   onOpenChange,
 }: AddFundsDialogProps) {
+  const { formatCurrency } = useCurrency()
   const { addFundsToBudget } = useBudgets(month)
 
   const form = useForm<AddFundsFormValues>({

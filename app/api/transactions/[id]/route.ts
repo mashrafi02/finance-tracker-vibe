@@ -1,8 +1,8 @@
 import { db } from '@/db'
-import { transactions, categories, accounts } from '@/db/schema'
+import { transactions, categories, accounts, budgets } from '@/db/schema'
 import { getAuthUser } from '@/lib/auth'
 import { updateTransactionSchema } from '@/lib/validations/transaction'
-import { eq, and, sql } from 'drizzle-orm'
+import { eq, and, sql, sum, gte, lte, ne } from 'drizzle-orm'
 
 export async function GET(
   _req: Request,
@@ -61,7 +61,14 @@ export async function PUT(
 
   // Verify ownership first
   const [existing] = await db
-    .select({ id: transactions.id, userId: transactions.userId })
+    .select({
+      id: transactions.id,
+      userId: transactions.userId,
+      amount: transactions.amount,
+      type: transactions.type,
+      date: transactions.date,
+      categoryId: transactions.categoryId,
+    })
     .from(transactions)
     .where(eq(transactions.id, id))
     .limit(1)
@@ -98,6 +105,66 @@ export async function PUT(
       if (!category) {
         return Response.json({ error: 'Category not found' }, { status: 404 })
       }
+    }
+
+    // Resolve effective values (new values or fall back to existing)
+    const effectiveType = type ?? existing.type
+    const effectiveAmount = amount ?? Number(existing.amount)
+    const effectiveCategoryId = categoryId ?? existing.categoryId
+    const effectiveDate = date ? new Date(date) : existing.date
+
+    // Budget check for expenses
+    if (effectiveType === 'EXPENSE') {
+      const month = `${effectiveDate.getFullYear()}-${String(effectiveDate.getMonth() + 1).padStart(2, '0')}`
+
+      const [budget] = await db
+        .select({ limit: budgets.limit })
+        .from(budgets)
+        .where(
+          and(
+            eq(budgets.userId, user.userId),
+            eq(budgets.categoryId, effectiveCategoryId),
+            eq(budgets.month, month),
+            eq(budgets.type, 'SPENDING')
+          )
+        )
+        .limit(1)
+
+      if (!budget) {
+        return Response.json(
+          { error: 'Set a budget for this category before adding expenses.' },
+          { status: 409 }
+        )
+      }
+
+      const monthStart = new Date(effectiveDate.getFullYear(), effectiveDate.getMonth(), 1)
+        const monthEnd = new Date(effectiveDate.getFullYear(), effectiveDate.getMonth() + 1, 0, 23, 59, 59)
+
+        // Sum existing expenses EXCLUDING the transaction being edited
+        const [spendingResult] = await db
+          .select({ total: sum(transactions.amount) })
+          .from(transactions)
+          .where(
+            and(
+              eq(transactions.userId, user.userId),
+              eq(transactions.categoryId, effectiveCategoryId),
+              eq(transactions.type, 'EXPENSE'),
+              gte(transactions.date, monthStart),
+              lte(transactions.date, monthEnd),
+              ne(transactions.id, id)
+            )
+          )
+
+        const currentSpending = Number(spendingResult?.total ?? 0)
+        const budgetLimit = Number(budget.limit)
+        const newTotal = currentSpending + effectiveAmount
+
+        if (newTotal > budgetLimit) {
+          return Response.json(
+            { error: 'This transaction would exceed your budget for this category.' },
+            { status: 409 }
+          )
+        }
     }
 
     // Build update object

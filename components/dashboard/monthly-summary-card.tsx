@@ -1,6 +1,9 @@
+'use client'
+
 import { TrendingDown, TrendingUp } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
-import { formatCurrency, cn } from '@/lib/utils'
+import { cn } from '@/lib/utils'
+import { useCurrency } from '@/contexts/currency-context'
 import { DeltaChip } from './delta-chip'
 
 interface MonthlySummaryCardProps {
@@ -16,6 +19,7 @@ export function MonthlySummaryCard({
   delta,
   periodLabel,
 }: MonthlySummaryCardProps) {
+  const { formatCurrency } = useCurrency()
   const isIncome = label === 'Monthly Income'
   const amountClass = isIncome
     ? 'text-foreground'

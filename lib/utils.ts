@@ -5,12 +5,25 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
-export function formatCurrency(amount: number | string): string {
+export function formatCurrency(
+  amount: number | string,
+  currency: 'USD' | 'BDT' = 'USD',
+): string {
+  const num = Number(amount)
+  if (currency === 'BDT') {
+    return (
+      '৳ ' +
+      new Intl.NumberFormat('en-US', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      }).format(num)
+    )
+  }
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: 'USD',
     minimumFractionDigits: 2,
-  }).format(Number(amount))
+  }).format(num)
 }
 
 export function formatDate(date: string | Date): string {

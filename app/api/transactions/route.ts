@@ -1,9 +1,9 @@
 import { NextRequest } from 'next/server'
 import { db } from '@/db'
-import { transactions, categories, accounts } from '@/db/schema'
+import { transactions, categories, accounts, budgets } from '@/db/schema'
 import { getAuthUser } from '@/lib/auth'
 import { createTransactionSchema, transactionQuerySchema } from '@/lib/validations/transaction'
-import { eq, and, desc, asc, count, gte, lte, sql, inArray, ilike } from 'drizzle-orm'
+import { eq, and, desc, asc, count, gte, lte, sql, inArray, ilike, sum } from 'drizzle-orm'
 
 export async function GET(req: NextRequest) {
   // 1. Authenticate
@@ -154,6 +154,55 @@ export async function POST(req: Request) {
         throw new Error('Category not found')
       }
 
+      // Check budget limit for expenses
+      if (type === 'EXPENSE') {
+        const transactionDate = new Date(date)
+        const month = `${transactionDate.getFullYear()}-${String(transactionDate.getMonth() + 1).padStart(2, '0')}`
+
+        // Query for spending budget for this category and month
+        const [budget] = await tx
+          .select({ limit: budgets.limit })
+          .from(budgets)
+          .where(
+            and(
+              eq(budgets.userId, user.userId),
+              eq(budgets.categoryId, categoryId),
+              eq(budgets.month, month),
+              eq(budgets.type, 'SPENDING')
+            )
+          )
+          .limit(1)
+
+        if (!budget) {
+          throw new Error('Budget required')
+        }
+
+        // Calculate current spending for this category in this month
+        const monthStart = new Date(transactionDate.getFullYear(), transactionDate.getMonth(), 1)
+        const monthEnd = new Date(transactionDate.getFullYear(), transactionDate.getMonth() + 1, 0, 23, 59, 59)
+
+        const [spendingResult] = await tx
+          .select({ total: sum(transactions.amount) })
+          .from(transactions)
+          .where(
+            and(
+              eq(transactions.userId, user.userId),
+              eq(transactions.categoryId, categoryId),
+              eq(transactions.type, 'EXPENSE'),
+              gte(transactions.date, monthStart),
+              lte(transactions.date, monthEnd)
+            )
+          )
+
+        const currentSpending = Number(spendingResult?.total ?? 0)
+        const budgetLimit = Number(budget.limit)
+        const newTotal = currentSpending + amount
+
+        if (newTotal > budgetLimit) {
+          throw new Error('Budget exceeded')
+        }
+      }
+
       // Insert transaction
       const [newTransaction] = await tx
         .insert(transactions)
@@ -185,6 +234,20 @@ export async function POST(req: Request) {
     
     if (error instanceof Error && error.message === 'Category not found') {
       return Response.json({ error: 'Category not found' }, { status: 404 })
+    }
+    
+    if (error instanceof Error && error.message === 'Budget exceeded') {
+      return Response.json(
+        { error: 'This transaction would exceed your budget for this category.' },
+        { status: 409 }
+      )
+    }
+
+    if (error instanceof Error && error.message === 'Budget required') {
+      return Response.json(
+        { error: 'Set a budget for this category before adding expenses.' },
+        { status: 409 }
+      )
     }
     
     return Response.json({ error: 'Internal server error' }, { status: 500 })

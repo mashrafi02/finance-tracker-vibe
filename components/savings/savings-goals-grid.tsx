@@ -14,7 +14,8 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { useSavingsGoals, type SavingsGoal } from '@/hooks/use-savings-goals'
-import { formatCurrency, cn } from '@/lib/utils'
+import { cn } from '@/lib/utils'
+import { useCurrency } from '@/contexts/currency-context'
 import { SavingsGoalSheet } from './savings-goal-sheet'
 import { DeleteSavingsGoalDialog } from './delete-savings-goal-dialog'
 import { AddFundsDialog } from './add-funds-dialog'
@@ -68,6 +69,7 @@ function GoalCard({
   onDelete,
   onViewEntries,
 }: GoalCardProps) {
+  const { formatCurrency } = useCurrency()
   const target = Number(goal.targetAmount)
   const saved = Number(goal.savedAmount)
   const pct = target > 0 ? Math.min(100, Math.round((saved / target) * 100)) : 0
@@ -185,6 +187,7 @@ function GoalCard({
 }
 
 export function SavingsGoalsGrid() {
+  const { formatCurrency } = useCurrency()
   const { goals, isLoading, isError } = useSavingsGoals()
 
   const [goalSheetOpen, setGoalSheetOpen] = useState(false)

@@ -3,6 +3,7 @@ import { Poppins } from "next/font/google";
 import { Toaster } from "sonner";
 import "./globals.css";
 import { ThemeProvider, themeInitScript } from "@/components/theme/theme-provider";
+import { CurrencyProvider } from "@/contexts/currency-context";
 
 const poppins = Poppins({
   variable: "--font-poppins",
@@ -28,7 +29,9 @@ export default function RootLayout({
       </head>
       <body className={`${poppins.className} min-h-full flex flex-col`}>
         <ThemeProvider>
-          {children}
+          <CurrencyProvider>
+            {children}
+          </CurrencyProvider>
           <Toaster richColors position="top-right" theme="system" />
         </ThemeProvider>
       </body>

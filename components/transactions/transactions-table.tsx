@@ -7,7 +7,6 @@ import {
   getCoreRowModel,
   useReactTable,
   SortingState,
-  VisibilityState,
 } from '@tanstack/react-table'
 import {
   Table,
@@ -20,29 +19,19 @@ import {
 import { Button } from '@/components/ui/button'
 import { buttonVariants } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
 import { Skeleton } from '@/components/ui/skeleton'
 import { EmptyState } from '@/components/ui/empty-state'
 import {
   ArrowUpDown,
   ChevronLeft,
   ChevronRight,
-  Columns3,
   Pencil,
   ReceiptText,
-  Rows3,
-  Rows4,
   Trash2,
 } from 'lucide-react'
-import { cn, formatCurrency, formatDate } from '@/lib/utils'
+import { cn, formatDate } from '@/lib/utils'
+import { useCurrency } from '@/contexts/currency-context'
 import type { TransactionWithCategory } from '@/hooks/use-transactions'
-
-type Density = 'compact' | 'comfortable'
 
 interface TransactionsTableProps {
   data: TransactionWithCategory[]
@@ -57,14 +46,6 @@ interface TransactionsTableProps {
   isLoading: boolean
 }
 
-const COLUMN_LABELS: Record<string, string> = {
-  date: 'Date',
-  description: 'Description',
-  category: 'Category',
-  type: 'Type',
-  amount: 'Amount',
-}
-
 export function TransactionsTable({
   data,
   pageCount,
@@ -77,11 +58,10 @@ export function TransactionsTable({
   onDelete,
   isLoading,
 }: TransactionsTableProps) {
+  const { formatCurrency } = useCurrency()
   const [sorting, setSorting] = useState<SortingState>([
     { id: 'date', desc: true },
   ])
-  const [density, setDensity] = useState<Density>('comfortable')
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
 
   const columns: ColumnDef<TransactionWithCategory>[] = useMemo(
     () => [
@@ -204,7 +184,7 @@ export function TransactionsTable({
         ),
       },
     ],
-    [sorting, onSortChange, onEdit, onDelete],
+    [sorting, onSortChange, onEdit, onDelete, formatCurrency],
   )
 
   const table = useReactTable({
@@ -216,99 +196,16 @@ export function TransactionsTable({
     pageCount,
     state: {
       sorting,
-      columnVisibility,
       pagination: { pageIndex: page - 1, pageSize },
     },
-    onColumnVisibilityChange: setColumnVisibility,
   })
 
   if (isLoading) {
     return <TransactionsTableSkeleton />
   }
 
-  const rowPad = density === 'compact' ? 'py-1.5' : 'py-3'
-  const cellPad = density === 'compact' ? 'p-2' : 'p-3'
-
   return (
     <div className="space-y-4">
-      {/* Table controls */}
-      <div className="flex flex-wrap items-center justify-end gap-2">
-        <div className="inline-flex items-center rounded-xl border border-border bg-card p-0.5 shadow-xs" role="group" aria-label="Table density">
-          <button
-            type="button"
-            onClick={() => setDensity('comfortable')}
-            aria-pressed={density === 'comfortable'}
-            className={cn(
-              'inline-flex h-8 items-center gap-1.5 rounded-[calc(var(--radius)*0.75)] px-2.5 text-xs font-medium transition-colors',
-              density === 'comfortable'
-                ? 'bg-muted text-foreground rounded-full'
-                : 'text-muted-foreground hover:text-foreground',
-            )}
-          >
-            <Rows3 className="h-3.5 w-3.5" />
-            Comfortable
-          </button>
-          <button
-            type="button"
-            onClick={() => setDensity('compact')}
-            aria-pressed={density === 'compact'}
-            className={cn(
-              'inline-flex h-8 items-center gap-1.5 rounded-[calc(var(--radius)*0.75)] px-2.5 text-xs font-medium transition-colors',
-              density === 'compact'
-                ? 'bg-muted text-foreground rounded-full'
-                : 'text-muted-foreground hover:text-foreground',
-            )}
-          >
-            <Rows4 className="h-3.5 w-3.5" />
-            Compact
-          </button>
-        </div>
-
-        <DropdownMenu>
-          <DropdownMenuTrigger
-            className={cn(buttonVariants({ variant: 'outline', size: 'sm' }), 'h-9 gap-1.5')}
-          >
-            <Columns3 className="h-3.5 w-3.5" />
-            Columns
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="min-w-[10rem]">
-            {table
-              .getAllColumns()
-              .filter((c) => c.getCanHide())
-              .map((column) => {
-                const label = COLUMN_LABELS[column.id] ?? column.id
-                const visible = column.getIsVisible()
-                return (
-                  <DropdownMenuItem
-                    key={column.id}
-                    onClick={(e) => {
-                      e.preventDefault()
-                      column.toggleVisibility(!visible)
-                    }}
-                    className="gap-2 capitalize"
-                  >
-                    <span
-                      className={cn(
-                        'inline-flex h-4 w-4 items-center justify-center rounded-sm border transition-colors',
-                        visible
-                          ? 'border-foreground bg-foreground text-background'
-                          : 'border-border bg-background',
-                      )}
-                    >
-                      {visible ? (
-                        <svg viewBox="0 0 12 12" className="h-2.5 w-2.5">
-                          <path fill="none" stroke="currentColor" strokeWidth="2" d="M2 6l3 3 5-6" />
-                        </svg>
-                      ) : null}
-                    </span>
-                    {label}
-                  </DropdownMenuItem>
-                )
-              })}
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
-
       {/* Mobile card stack — visible below md */}
       <div className="space-y-2 md:hidden">
         {data.length === 0 ? (
@@ -397,7 +294,7 @@ export function TransactionsTable({
                 table.getRowModel().rows.map((row) => (
                   <TableRow key={row.id}>
                     {row.getVisibleCells().map((cell) => (
-                      <TableCell key={cell.id} className={cn(cellPad, rowPad, 'first:pl-12')}>
+                      <TableCell key={cell.id} className={cn('p-3 py-3', 'first:pl-12')}>
                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
                       </TableCell>
                     ))}

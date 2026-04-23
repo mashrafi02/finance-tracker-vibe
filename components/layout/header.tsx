@@ -5,6 +5,7 @@ import { LogoutButton } from '@/components/auth/logout-button'
 import { MobileNav } from './mobile-nav'
 import { ThemeToggle } from '@/components/theme/theme-toggle'
 import { CommandMenuTrigger } from '@/components/command-menu'
+import { CurrencySwitcher } from './currency-switcher'
 import { navItems } from './nav-items'
 
 interface HeaderProps {
@@ -37,6 +38,7 @@ export function Header({ user }: HeaderProps) {
         </div>
 
         <div className="flex items-center gap-2 sm:gap-2.5">
+          <CurrencySwitcher />
           <CommandMenuTrigger />
           <ThemeToggle />
           <div className="hidden h-10 items-center gap-2.5 rounded-xl border border-border bg-card px-2 pr-3 shadow-card sm:inline-flex">

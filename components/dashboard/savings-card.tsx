@@ -15,7 +15,8 @@ import {
 import { Skeleton } from '@/components/ui/skeleton'
 import { EmptyState } from '@/components/ui/empty-state'
 import { useSavingsGoals, type SavingsGoal } from '@/hooks/use-savings-goals'
-import { formatCurrency, cn } from '@/lib/utils'
+import { cn } from '@/lib/utils'
+import { useCurrency } from '@/contexts/currency-context'
 import { NewSavingsGoalDialog } from './new-savings-goal-dialog'
 
 // Rotating tint palette so each goal card has its own accent.
@@ -51,6 +52,7 @@ function toneFor(index: number) {
 }
 
 function GoalTile({ goal, index }: { goal: SavingsGoal; index: number }) {
+  const { formatCurrency } = useCurrency()
   const target = Number(goal.targetAmount)
   const saved = Number(goal.savedAmount)
   const pct = target > 0 ? Math.min(100, Math.round((saved / target) * 100)) : 0
@@ -151,6 +153,7 @@ function GoalTile({ goal, index }: { goal: SavingsGoal; index: number }) {
 }
 
 export function SavingsCard() {
+  const { formatCurrency } = useCurrency()
   const [dialogOpen, setDialogOpen] = useState(false)
   const { goals, isLoading, isError } = useSavingsGoals()
 

@@ -31,7 +31,7 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Loader2, Target } from 'lucide-react'
 import { useSavingsGoals } from '@/hooks/use-savings-goals'
-import { formatCurrency } from '@/lib/utils'
+import { useCurrency } from '@/contexts/currency-context'
 
 const createGoalSchema = z.object({
   name: z
@@ -58,6 +58,7 @@ export function NewSavingsGoalDialog({
   open,
   onOpenChange,
 }: NewSavingsGoalDialogProps) {
+  const { formatCurrency } = useCurrency()
   const { createGoal } = useSavingsGoals()
 
   const form = useForm<CreateGoalValues>({

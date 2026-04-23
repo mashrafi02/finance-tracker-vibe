@@ -13,7 +13,7 @@ import { Progress } from '@/components/ui/progress'
 import { Plus } from 'lucide-react'
 import { useSavingsEntries, type SavingsEntry } from '@/hooks/use-savings-entries'
 import type { SavingsGoal } from '@/hooks/use-savings-goals'
-import { formatCurrency } from '@/lib/utils'
+import { useCurrency } from '@/contexts/currency-context'
 import { EntriesTable } from './entries-table'
 import { AddFundsDialog } from './add-funds-dialog'
 import { EditEntryDialog } from './edit-entry-dialog'
@@ -26,6 +26,7 @@ interface EntriesSheetProps {
 }
 
 export function EntriesSheet({ goal, open, onOpenChange }: EntriesSheetProps) {
+  const { formatCurrency } = useCurrency()
   const [addOpen, setAddOpen] = useState(false)
   const [editingEntry, setEditingEntry] = useState<SavingsEntry | null>(null)
   const [deletingEntry, setDeletingEntry] = useState<SavingsEntry | null>(null)

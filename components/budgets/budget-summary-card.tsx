@@ -19,7 +19,8 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { type BudgetStatus } from '@/hooks/use-budgets'
-import { formatCurrency, cn } from '@/lib/utils'
+import { cn } from '@/lib/utils'
+import { useCurrency } from '@/contexts/currency-context'
 
 interface MonthOption {
   value: string
@@ -45,6 +46,7 @@ export function BudgetSummaryCard({
   monthOptions,
   onMonthChange,
 }: BudgetSummaryCardProps) {
+  const { formatCurrency } = useCurrency()
   const summary = useMemo(() => {
     const activeSpending = spendingBudgets.filter((b) => b.limit !== null)
     const totalLimit = activeSpending.reduce((acc, b) => acc + (b.limit ?? 0), 0)

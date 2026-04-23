@@ -31,7 +31,7 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Loader2, Target } from 'lucide-react'
 import { useSavingsGoals, type SavingsGoal } from '@/hooks/use-savings-goals'
-import { formatCurrency } from '@/lib/utils'
+import { useCurrency } from '@/contexts/currency-context'
 
 const goalFormSchema = z.object({
   name: z.string().min(1, 'Name is required').max(100, 'Name is too long'),
@@ -57,6 +57,7 @@ export function SavingsGoalSheet({
   onOpenChange,
   goal,
 }: SavingsGoalSheetProps) {
+  const { formatCurrency } = useCurrency()
   const isEditing = Boolean(goal)
   const { createGoal, updateGoal } = useSavingsGoals()
 

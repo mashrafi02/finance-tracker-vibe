@@ -19,6 +19,7 @@ import {
 } from '@/components/ui/chart'
 import { Skeleton } from '@/components/ui/skeleton'
 import { fetcher } from '@/lib/utils'
+import { useCurrency } from '@/contexts/currency-context'
 
 interface SpendingData {
   name: string
@@ -32,6 +33,7 @@ interface SpendingResponse {
 }
 
 export function SpendingByCategoryChart() {
+  const { formatCurrency } = useCurrency()
   const { data, error, isLoading } = useSWR<SpendingResponse>(
     `/api/analytics/spending?range=monthly`,
     fetcher
@@ -73,7 +75,13 @@ export function SpendingByCategoryChart() {
           <ChartContainer config={chartConfig} className="h-[300px] w-full">
             <PieChart>
               <ChartTooltip
-                content={<ChartTooltipContent nameKey="name" hideLabel />}
+                content={
+                  <ChartTooltipContent
+                    nameKey="name"
+                    hideLabel
+                    formatter={(value) => formatCurrency(Number(value))}
+                  />
+                }
               />
               <Pie
                 data={chartData}

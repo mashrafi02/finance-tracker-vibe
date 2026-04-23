@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import useSWR from 'swr'
-import { ArrowLeftRight, Percent, TrendingDown, TrendingUp } from 'lucide-react'
+import { ArrowLeftRight, PiggyBank, TrendingDown, TrendingUp } from 'lucide-react'
 import {
   Select,
   SelectContent,
@@ -38,6 +38,10 @@ interface AnalyticsOverviewResponse {
   budgetPerformance: BudgetPerformance
 }
 
+interface TotalSavingsResponse {
+  totalSavings: number
+}
+
 const RANGE_LABELS: Record<Range, string> = {
   '30d': 'Last 30 Days',
   '90d': 'Last 90 Days',
@@ -46,10 +50,15 @@ const RANGE_LABELS: Record<Range, string> = {
 }
 
 export function AnalyticsPageClient() {
-  const [range, setRange] = useState<Range>('90d')
+  const [range, setRange] = useState<Range>('30d')
 
   const { data, isLoading } = useSWR<AnalyticsOverviewResponse>(
     `/api/analytics/overview?range=${range}`,
+    fetcher,
+  )
+
+  const { data: savingsData, isLoading: isSavingsLoading } = useSWR<TotalSavingsResponse>(
+    '/api/analytics/total-savings',
     fetcher,
   )
 
@@ -135,14 +144,13 @@ export function AnalyticsPageClient() {
         </Reveal>
         <Reveal delay={160} className="min-w-0">
           <StatCard
-            title="Savings Rate"
-            value={stats?.savingsRate ?? 0}
-            isCurrency={false}
-            suffix="%"
-            icon={<Percent className="h-4 w-4" />}
+            title="Total Savings"
+            value={savingsData?.totalSavings ?? 0}
+            isCurrency
+            icon={<PiggyBank className="h-4 w-4" />}
             iconToneClass="bg-violet-100 text-violet-700 dark:bg-violet-500/15 dark:text-violet-300"
-            subtitle="Net flow ÷ total income"
-            isLoading={isLoading}
+            subtitle="Across all savings goals"
+            isLoading={isSavingsLoading}
           />
         </Reveal>
       </div>
