@@ -160,8 +160,8 @@ export function SavingsCard() {
     totalTarget > 0 ? Math.min(100, Math.round((totalSaved / totalTarget) * 100)) : 0
 
   return (
-    <Card>
-      <CardContent className="p-5">
+    <Card className="w-full min-w-0 overflow-hidden">
+      <CardContent className="flex h-full min-w-0 flex-col p-5">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="flex items-center gap-2">
             <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
@@ -172,7 +172,7 @@ export function SavingsCard() {
               <p className="mt-0.5 text-[11px] font-medium text-muted-foreground">
                 {goals.length === 0
                   ? 'Set goals to stay on track'
-                  : `${goals.length} goal${goals.length === 1 ? '' : 's'} · ${overallPct}% combined`}
+                  : `${goals.length} goal${goals.length === 1 ? '' : 's'}`}
               </p>
             </div>
           </div>

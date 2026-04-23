@@ -22,13 +22,7 @@ import {
 } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
-import { MoreHorizontal, Plus, Pencil, Trash2 } from 'lucide-react'
+import { Plus, Pencil, Trash2 } from 'lucide-react'
 import { useCategories } from '@/hooks/use-categories'
 import { CategorySheet } from './category-sheet'
 import { DeleteCategoryDialog } from './delete-category-dialog'
@@ -159,7 +153,7 @@ export function CategoriesTable({ initialData }: CategoriesTableProps) {
                       : flexRender(header.column.columnDef.header, header.getContext())}
                   </TableHead>
                 ))}
-                <TableHead className="w-[60px]" />
+                  <TableHead className="w-[88px]" />
               </TableRow>
             ))}
           </TableHeader>
@@ -173,25 +167,22 @@ export function CategoriesTable({ initialData }: CategoriesTableProps) {
                     </TableCell>
                   ))}
                   <TableCell>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger className="inline-flex h-9 w-9 items-center justify-center rounded-lg hover:bg-accent">
-                        <MoreHorizontal className="h-4 w-4" />
-                        <span className="sr-only">Open menu</span>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => handleEdit(row.original)}>
-                          <Pencil className="mr-2 h-4 w-4" />
-                          Edit
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() => handleDelete(row.original)}
-                          className="text-destructive focus:text-destructive"
-                        >
-                          <Trash2 className="mr-2 h-4 w-4" />
-                          Delete
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                    <div className="flex items-center gap-0.5">
+                      <button
+                        aria-label="Edit category"
+                        onClick={() => handleEdit(row.original)}
+                        className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                      >
+                        <Pencil className="h-3.5 w-3.5" />
+                      </button>
+                      <button
+                        aria-label="Delete category"
+                        onClick={() => handleDelete(row.original)}
+                        className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))

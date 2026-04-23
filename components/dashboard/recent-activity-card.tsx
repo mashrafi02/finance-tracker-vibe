@@ -13,9 +13,9 @@ export function RecentActivityCard() {
   const { transactions, isLoading, isError } = useRecentTransactions(5)
 
   return (
-    <Card className="h-full">
-      <CardContent className="flex h-full flex-col p-5">
-        <div className="mb-4 flex items-start justify-between">
+    <Card className="h-full w-full min-w-0 overflow-hidden">
+      <CardContent className="flex h-full min-w-0 flex-col p-5">
+        <div className="mb-4 flex items-start justify-between gap-2">
           <div>
             <h3 className="text-sm font-semibold">Recent transactions</h3>
             <p className="mt-0.5 text-[11px] font-medium text-muted-foreground">
@@ -54,14 +54,14 @@ export function RecentActivityCard() {
             className="py-8"
           />
         ) : (
-          <ul className="divide-y divide-border/60">
+          <ul className="min-w-0 divide-y divide-border/60">
             {transactions.map((tx) => {
               const parts = tx.description.split(' | ')
               const isIncome = tx.type === 'INCOME'
               return (
                 <li
                   key={tx.id}
-                  className="flex items-center gap-3 py-2.5 first:pt-0 last:pb-0"
+                  className="flex min-w-0 items-center gap-3 py-2.5 first:pt-0 last:pb-0"
                 >
                   <span
                     className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm"
@@ -83,7 +83,7 @@ export function RecentActivityCard() {
                   </div>
                   <span
                     className={cn(
-                      'shrink-0 font-mono text-[13px] font-semibold tabular-nums',
+                      'shrink-0 max-w-[45%] truncate font-mono text-[13px] font-semibold tabular-nums',
                       isIncome
                         ? 'text-emerald-600 dark:text-emerald-400'
                         : 'text-rose-600 dark:text-rose-400',

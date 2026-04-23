@@ -14,8 +14,9 @@ import { OverspentBudgetAlert } from '@/components/budgets/overspent-budget-aler
 import { BalanceCard } from '@/components/dashboard/balance-card'
 import { MonthlySummaryCard } from '@/components/dashboard/monthly-summary-card'
 import { RecentActivityCard } from '@/components/dashboard/recent-activity-card'
-import { LatestReportsCard } from '@/components/dashboard/latest-reports-card'
+import { MonthlyReportsRow } from '@/components/dashboard/monthly-reports-row'
 import { SavingsCard } from '@/components/dashboard/savings-card'
+import { RecentSavingsCard } from '@/components/savings/recent-savings-card'
 
 function pctDelta(current: number, previous: number): number | null {
   if (previous === 0) return current === 0 ? 0 : null
@@ -202,45 +203,52 @@ export default async function DashboardPage() {
               periodLabel={monthLabel}
             />
           </Reveal>
-
-          <Reveal delay={140}>
-            <RecentActivityCard />
-          </Reveal>
-
-          <Reveal delay={180}>
-            <LatestReportsCard />
-          </Reveal>
         </div>
 
         {/* ─── RIGHT CONTENT ─────────────────────────────────────── */}
         <div className="space-y-4 lg:col-span-2">
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Reveal delay={100}>
-              <MonthlySummaryCard
-                label="Monthly Spent"
-                amount={curExpense}
-                delta={expenseDelta}
-                periodLabel={monthLabel}
-              />
-            </Reveal>
-            <Reveal delay={160}>
-              <MonthlySummaryCard
-                label="Monthly Income"
-                amount={curIncome}
-                delta={incomeDelta}
-                periodLabel={monthLabel}
-              />
-            </Reveal>
-          </div>
-
-          <Reveal delay={220}>
-            <SummaryChart />
-          </Reveal>
-
-          <Reveal delay={280}>
-            <SavingsCard />
-          </Reveal>
+          <MonthlyReportsRow
+            spentCard={
+              <Reveal delay={100}>
+                <MonthlySummaryCard
+                  label="Monthly Spent"
+                  amount={curExpense}
+                  delta={expenseDelta}
+                  periodLabel={monthLabel}
+                />
+              </Reveal>
+            }
+            incomeCard={
+              <Reveal delay={160}>
+                <MonthlySummaryCard
+                  label="Monthly Income"
+                  amount={curIncome}
+                  delta={incomeDelta}
+                  periodLabel={monthLabel}
+                />
+              </Reveal>
+            }
+          />
         </div>
+      </div>
+
+      {/* Recent transactions + Cashflow chart — share a row so heights match */}
+      <div className="grid items-stretch gap-4 lg:grid-cols-3">
+        <Reveal delay={140} className="h-full min-w-0 lg:col-span-1">
+          <RecentActivityCard />
+        </Reveal>
+        <Reveal delay={220} className="h-full min-w-0 lg:col-span-2">
+          <SummaryChart />
+        </Reveal>
+      </div>
+
+      <div className="grid items-stretch gap-4 lg:grid-cols-2">
+        <Reveal delay={280} className="h-full min-w-0">
+          <SavingsCard />
+        </Reveal>
+        <Reveal delay={320} className="h-full min-w-0">
+          <RecentSavingsCard limit={3} showSeeAll />
+        </Reveal>
       </div>
     </div>
   )

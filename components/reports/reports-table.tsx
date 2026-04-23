@@ -20,21 +20,8 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
 import { EmptyState } from '@/components/ui/empty-state'
-import {
-  MoreHorizontal,
-  Plus,
-  Eye,
-  Trash2,
-  Loader2,
-  FileText,
-} from 'lucide-react'
+import { Plus, Eye, Trash2, Loader2, FileText } from 'lucide-react'
 import { useReports, type ReportListItem } from '@/hooks/use-reports'
 import { ReportViewDialog } from './report-view-dialog'
 import { DeleteReportDialog } from './delete-report-dialog'
@@ -277,7 +264,7 @@ export function ReportsTable() {
                           )}
                     </TableHead>
                   ))}
-                  <TableHead className="w-[60px]" />
+                  <TableHead className="w-[88px]" />
                 </TableRow>
               ))}
             </TableHeader>
@@ -293,32 +280,33 @@ export function ReportsTable() {
                 </TableRow>
               ) : table.getRowModel().rows.length ? (
                 table.getRowModel().rows.map((row) => (
-                  <TableRow key={row.id}>
+                  <TableRow
+                    key={row.id}
+                    className="cursor-pointer"
+                    onClick={() => handleView(row.original)}
+                  >
                     {row.getVisibleCells().map((cell) => (
                       <TableCell key={cell.id}>
                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
                       </TableCell>
                     ))}
-                    <TableCell>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger className="inline-flex h-9 w-9 items-center justify-center rounded-lg hover:bg-accent">
-                          <MoreHorizontal className="h-4 w-4" />
-                          <span className="sr-only">Open menu</span>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => handleView(row.original)}>
-                            <Eye className="mr-2 h-4 w-4" />
-                            View report
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => handleDelete(row.original)}
-                            className="text-destructive focus:text-destructive"
-                          >
-                            <Trash2 className="mr-2 h-4 w-4" />
-                            Delete
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                    <TableCell onClick={(e) => e.stopPropagation()}>
+                      <div className="flex items-center gap-0.5">
+                        <button
+                          aria-label="View report"
+                          onClick={() => handleView(row.original)}
+                          className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                        >
+                          <Eye className="h-3.5 w-3.5" />
+                        </button>
+                        <button
+                          aria-label="Delete report"
+                          onClick={() => handleDelete(row.original)}
+                          className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))
@@ -363,6 +351,7 @@ export function ReportsTable() {
 
       {/* View dialog */}
       <ReportViewDialog
+        key={viewingReportId ?? ''}
         isOpen={viewDialogOpen}
         onOpenChange={setViewDialogOpen}
         reportId={viewingReportId}

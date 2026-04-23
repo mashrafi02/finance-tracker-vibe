@@ -89,21 +89,21 @@ export function SummaryChart() {
   })) ?? []
 
   return (
-    <Card>
-      <CardHeader className="flex flex-col gap-4 pb-2 sm:flex-row sm:items-start sm:justify-between">
-        <div className="space-y-1">
+    <Card className="flex h-full w-full min-w-0 flex-col overflow-hidden">
+      <CardHeader className="flex flex-col gap-3 pb-2 sm:flex-row sm:flex-wrap sm:items-start sm:justify-between">
+        <div className="min-w-0 space-y-1">
           <CardTitle className="text-base">Cashflow</CardTitle>
           <CardDescription className="text-xs">
             Income vs expenses over time
           </CardDescription>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex flex-wrap items-center gap-3 sm:gap-4">
           <div className="hidden items-center gap-4 sm:flex">
             <LegendDot className="bg-[var(--chart-1)]" label="Expenses" />
             <LegendDot className="bg-[var(--chart-3)]" label="Income" />
           </div>
           <Select value={range} onValueChange={(value) => value && setRange(value)}>
-            <SelectTrigger className="h-9 w-full rounded-lg sm:w-[150px]">
+            <SelectTrigger className="h-9 w-[130px] rounded-lg sm:w-[150px]">
               <SelectValue placeholder="Select range" />
             </SelectTrigger>
             <SelectContent>
@@ -114,7 +114,7 @@ export function SummaryChart() {
           </Select>
         </div>
       </CardHeader>
-      <CardContent>
+      <CardContent className="min-w-0 flex-1">
         {isLoading ? (
           <div className="flex h-[300px] items-center justify-center">
             <Skeleton className="h-[280px] w-full" />
@@ -132,7 +132,7 @@ export function SummaryChart() {
             </p>
           </div>
         ) : (
-          <ChartContainer config={chartConfig} className="h-[300px] w-full">
+          <ChartContainer config={chartConfig} className="aspect-auto h-[300px] w-full min-w-0">
             <AreaChart
               data={chartData}
               margin={{ top: 10, right: 12, left: 0, bottom: 0 }}

@@ -144,10 +144,10 @@ export function CommandMenuTrigger() {
         aria-label="Open command menu"
         className="hidden h-10 items-center gap-2 rounded-xl border border-border bg-card px-3 text-sm text-muted-foreground shadow-card transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40 focus-visible:ring-offset-2 sm:inline-flex"
       >
-        <Search className="h-3.5 w-3.5" />
-        <span className="text-xs font-medium">Search…</span>
+        <Search className="h-4 w-4" />
+        <span className="text-xs font-medium -mb-1">Search…</span>
         <kbd className="ml-2 hidden items-center gap-0.5 rounded-md border border-border/80 bg-background px-1.5 py-0.5 text-[10px] font-semibold text-muted-foreground md:inline-flex">
-          <span className="text-[11px]">{isMac ? '⌘' : 'Ctrl'}</span>K
+          <span className="text-[11px] -mb-1">{isMac ? '⌘' : 'Ctrl'} K</span>
         </kbd>
       </button>
       <CommandMenu open={open} onOpenChange={setOpen} />

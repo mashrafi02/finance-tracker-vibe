@@ -10,6 +10,7 @@ import { navItems } from './nav-items'
 interface HeaderProps {
   user: {
     email: string
+    name: string
   }
 }
 
@@ -21,7 +22,7 @@ function usePageTitle() {
 
 export function Header({ user }: HeaderProps) {
   const title = usePageTitle()
-  const initial = user.email?.[0]?.toUpperCase() ?? '?'
+  const initial = user.name?.[0]?.toUpperCase() ?? '?'
 
   return (
     <header className="sticky top-0 z-40 w-full border-b border-border/70 bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -42,8 +43,8 @@ export function Header({ user }: HeaderProps) {
             <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-xs font-semibold text-primary">
               {initial}
             </span>
-            <span className="max-w-[160px] truncate text-xs font-semibold text-foreground">
-              {user.email}
+            <span className="max-w-[160px] truncate text-xs font-semibold text-foreground -mb-[3.5px]">
+              {user.name}
             </span>
           </div>
           <LogoutButton />

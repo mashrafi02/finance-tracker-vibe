@@ -33,7 +33,6 @@ import {
   ChevronLeft,
   ChevronRight,
   Columns3,
-  MoreHorizontal,
   Pencil,
   ReceiptText,
   Rows3,
@@ -186,28 +185,22 @@ export function TransactionsTable({
         header: 'Actions',
         enableHiding: false,
         cell: ({ row }) => (
-          <DropdownMenu>
-            <DropdownMenuTrigger
-              aria-label="Open row actions"
-              className={cn(buttonVariants({ variant: 'ghost', size: 'icon' }), 'h-8 w-8')}
+          <div className="flex items-center gap-0.5">
+            <button
+              aria-label="Edit transaction"
+              onClick={() => onEdit(row.original)}
+              className={cn(buttonVariants({ variant: 'ghost', size: 'icon' }), 'h-8 w-8 text-muted-foreground hover:text-foreground')}
             >
-              <MoreHorizontal className="h-4 w-4" />
-              <span className="sr-only">Open menu</span>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => onEdit(row.original)}>
-                <Pencil className="mr-2 h-4 w-4" />
-                Edit
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => onDelete(row.original.id)}
-                className="text-destructive focus:text-destructive"
-              >
-                <Trash2 className="mr-2 h-4 w-4" />
-                Delete
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+              <Pencil className="h-3.5 w-3.5" />
+            </button>
+            <button
+              aria-label="Delete transaction"
+              onClick={() => onDelete(row.original.id)}
+              className={cn(buttonVariants({ variant: 'ghost', size: 'icon' }), 'h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10')}
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+            </button>
+          </div>
         ),
       },
     ],
@@ -356,28 +349,22 @@ export function TransactionsTable({
                       {tx.type === 'INCOME' ? '+' : '−'}
                       {formatCurrency(Number(tx.amount))}
                     </span>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger
-                        aria-label="Open row actions"
-                        className={cn(buttonVariants({ variant: 'ghost', size: 'icon' }), 'h-7 w-7')}
-                      >
-                        <MoreHorizontal className="h-4 w-4" />
-                        <span className="sr-only">Open menu</span>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => onEdit(tx)}>
-                          <Pencil className="mr-2 h-4 w-4" />
-                          Edit
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() => onDelete(tx.id)}
-                          className="text-destructive focus:text-destructive"
+                    <div className="flex items-center gap-0.5">
+                        <button
+                          aria-label="Edit transaction"
+                          onClick={() => onEdit(tx)}
+                          className={cn(buttonVariants({ variant: 'ghost', size: 'icon' }), 'h-7 w-7 text-muted-foreground hover:text-foreground')}
                         >
-                          <Trash2 className="mr-2 h-4 w-4" />
-                          Delete
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                          <Pencil className="h-3.5 w-3.5" />
+                        </button>
+                        <button
+                          aria-label="Delete transaction"
+                          onClick={() => onDelete(tx.id)}
+                          className={cn(buttonVariants({ variant: 'ghost', size: 'icon' }), 'h-7 w-7 text-muted-foreground hover:bg-destructive/10 hover:text-destructive')}
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
                   </div>
                 </div>
               </div>

@@ -21,7 +21,10 @@ export default function SavingsPage() {
           <SavingsGoalsGrid />
         </Reveal>
 
-        <Reveal delay={120} className="lg:col-span-1">
+        <Reveal
+          delay={120}
+          className="lg:sticky lg:top-20 lg:col-span-1 lg:self-start lg:max-h-[calc(100vh-6rem)]"
+        >
           <RecentSavingsCard />
         </Reveal>
       </div>
