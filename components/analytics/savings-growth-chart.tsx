@@ -161,7 +161,7 @@ export function SavingsGrowthChart() {
           <SelectTrigger className="h-9 w-full sm:w-[150px]">
             <SelectValue />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent className="p-2 h-40!">
             {(Object.entries(RANGE_LABELS) as [Range, string][]).map(([v, label]) => (
               <SelectItem key={v} value={v}>{label}</SelectItem>
             ))}

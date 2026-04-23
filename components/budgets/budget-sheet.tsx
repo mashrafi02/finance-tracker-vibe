@@ -211,7 +211,7 @@ export function BudgetSheet({
                         className={cn(
                           'flex items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold transition-colors',
                           field.value === 'SPENDING'
-                            ? 'bg-background text-foreground shadow-card'
+                            ? 'bg-card text-foreground shadow-card dark:bg-accent'
                             : 'text-muted-foreground hover:text-foreground',
                           isEditing && 'cursor-not-allowed opacity-60',
                         )}
@@ -228,7 +228,7 @@ export function BudgetSheet({
                         className={cn(
                           'flex items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold transition-colors',
                           field.value === 'INCOME_GOAL'
-                            ? 'bg-background text-foreground shadow-card'
+                            ? 'bg-card text-foreground shadow-card dark:bg-accent'
                             : 'text-muted-foreground hover:text-foreground',
                           isEditing && 'cursor-not-allowed opacity-60',
                         )}

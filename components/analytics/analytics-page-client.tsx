@@ -76,7 +76,7 @@ export function AnalyticsPageClient() {
             <SelectTrigger className="h-9 w-full sm:w-[160px]">
               <SelectValue />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="p-2 h-32!">
               {(Object.entries(RANGE_LABELS) as [Range, string][]).map(
                 ([v, label]) => (
                   <SelectItem key={v} value={v}>

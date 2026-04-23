@@ -94,7 +94,7 @@ export function ProfileAvatar({
         >
           <Avatar
             className={cn(
-              'size-full ring-4 ring-white shadow-md transition-opacity',
+              'size-full ring-4 ring-card shadow-md transition-opacity',
               isLoading && 'opacity-70',
             )}
           >
@@ -121,7 +121,7 @@ export function ProfileAvatar({
           onClick={() => !isLoading && fileInputRef.current?.click()}
           disabled={isLoading}
           aria-label="Upload new photo"
-          className="absolute bottom-0.5 right-0.5 flex size-7 items-center justify-center rounded-full bg-primary text-white shadow-md ring-2 ring-white transition-colors hover:bg-primary/90 disabled:opacity-60"
+          className="absolute bottom-0.5 right-0.5 flex size-7 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-md ring-2 ring-card transition-colors hover:bg-primary/90 disabled:opacity-60"
         >
           {isUploading ? (
             <Loader2 className="size-3.5 animate-spin" />

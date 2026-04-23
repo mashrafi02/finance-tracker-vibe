@@ -23,7 +23,7 @@ export function ProfileNav() {
             className={cn(
               'rounded-lg px-5 py-1.5 text-sm font-medium transition-all duration-150',
               isActive
-                ? 'bg-white shadow-sm text-foreground'
+                ? 'bg-card shadow-card text-foreground dark:bg-accent'
                 : 'text-muted-foreground hover:text-foreground',
             )}
           >

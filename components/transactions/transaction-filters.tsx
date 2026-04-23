@@ -215,7 +215,7 @@ export function TransactionFilters({ categories }: TransactionFiltersProps) {
               <SelectTrigger>
                 <SelectValue placeholder="All types" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="p-2 h-26!">
                 <SelectItem value="all">All types</SelectItem>
                 <SelectItem value="INCOME">Income</SelectItem>
                 <SelectItem value="EXPENSE">Expense</SelectItem>

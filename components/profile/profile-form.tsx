@@ -115,17 +115,13 @@ export function ProfileForm({ initialData, onSuccess }: ProfileFormProps) {
                     />
                   </FormControl>
                   <FormDescription className="flex justify-between">
-                    <span>A short bio for your profile.</span>
-                    <span className="text-xs tabular-nums">
-                      {bioLength}/160
-                    </span>
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
             />
           </CardContent>
-          <CardFooter className='border-none! bg-white!'>
+          <CardFooter className='border-none! bg-muted/30!'>
             <Button
               type="submit"
               disabled={form.formState.isSubmitting || !form.formState.isDirty}

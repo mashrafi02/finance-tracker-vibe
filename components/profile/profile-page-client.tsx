@@ -30,7 +30,7 @@ export function ProfilePageClient({ initialUser }: { initialUser: User }) {
       {/* Hero card */}
       <Card className="overflow-hidden pt-0">
         {/* Gradient band */}
-        <div className="h-24 bg-gradient-to-r from-primary/20 via-primary/10 to-transparent" />
+        <div className="h-24 bg-gradient-to-r from-primary/20 via-primary/10 to-transparent dark:from-primary/30 dark:via-primary/15" />
 
         <CardContent className="pt-0 pb-6">
           <div className="-mt-10 flex flex-col gap-4 sm:flex-row sm:items-end sm:gap-6">

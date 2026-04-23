@@ -106,10 +106,10 @@ export function SummaryChart() {
             <SelectTrigger className="h-9 w-[130px] rounded-lg sm:w-[150px]">
               <SelectValue placeholder="Select range" />
             </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="weekly">Last 7 Days</SelectItem>
-              <SelectItem value="monthly">Last 30 Days</SelectItem>
-              <SelectItem value="yearly">Last 12 Months</SelectItem>
+            <SelectContent className="p-2 h-26!">
+              <SelectItem value="weekly" className={"px-3"}>Last 7 Days</SelectItem>
+              <SelectItem value="monthly" className={"px-3"}>Last 30 Days</SelectItem>
+              <SelectItem value="yearly" className={"px-3"}>Last 12 Months</SelectItem>
             </SelectContent>
           </Select>
         </div>
