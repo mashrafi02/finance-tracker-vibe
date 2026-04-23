@@ -19,6 +19,8 @@ export async function GET() {
         email: users.email,
         username: users.username,
         name: users.name,
+        imageUrl: users.imageUrl,
+        bio: users.bio,
       })
       .from(users)
       .where(eq(users.id, authUser.userId))

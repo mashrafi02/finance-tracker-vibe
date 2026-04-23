@@ -43,6 +43,13 @@
       "when": 1776850109251,
       "tag": "0005_nervous_nitro",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1776922446174,
+      "tag": "0006_puzzling_reavers",
+      "breakpoints": true
     }
   ]
 }

@@ -1,9 +1,66 @@
 import { db } from '@/db'
 import { users } from '@/db/schema'
 import { getAuthUser, clearAuthCookie } from '@/lib/auth'
-import { updateNameSchema, changePasswordSchema } from '@/lib/validations/profile'
+import { updateNameSchema, changePasswordSchema, updateProfileSchema } from '@/lib/validations/profile'
 import { eq } from 'drizzle-orm'
 import bcrypt from 'bcryptjs'
+
+export async function PUT(req: Request) {
+  // 1. Authenticate
+  const user = await getAuthUser()
+  if (!user) {
+    return Response.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  // 2. Parse and validate body
+  const body = await req.json()
+  const result = updateProfileSchema.safeParse(body)
+  if (!result.success) {
+    return Response.json(
+      { error: 'Validation failed', details: result.error.flatten() },
+      { status: 400 },
+    )
+  }
+
+  // 3. Update user profile
+  try {
+    const updateData: {
+      name: string
+      bio: string | null
+      imageUrl?: string | null
+    } = {
+      name: result.data.name,
+      bio: result.data.bio ?? null,
+    }
+
+    // Only update imageUrl if it's provided in the request
+    if ('imageUrl' in result.data) {
+      updateData.imageUrl = result.data.imageUrl ?? null
+    }
+
+    const [updated] = await db
+      .update(users)
+      .set(updateData)
+      .where(eq(users.id, user.userId))
+      .returning({
+        id: users.id,
+        email: users.email,
+        username: users.username,
+        name: users.name,
+        imageUrl: users.imageUrl,
+        bio: users.bio,
+      })
+
+    if (!updated) {
+      return Response.json({ error: 'User not found' }, { status: 404 })
+    }
+
+    return Response.json(updated)
+  } catch (error) {
+    console.error('[PUT /api/profile]', error)
+    return Response.json({ error: 'Internal server error' }, { status: 500 })
+  }
+}
 
 export async function PATCH(req: Request) {
   // 1. Authenticate

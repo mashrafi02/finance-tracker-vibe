@@ -61,7 +61,7 @@ export function ChangePasswordForm() {
         <form onSubmit={form.handleSubmit(onSubmit)}>
           <CardHeader>
             <CardTitle>Change password</CardTitle>
-            <CardDescription>
+            <CardDescription className='mb-6'>
               Use at least 8 characters, including one uppercase letter and one number.
             </CardDescription>
           </CardHeader>
