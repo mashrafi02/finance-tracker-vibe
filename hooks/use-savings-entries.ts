@@ -1,3 +1,4 @@
+import { startTransition } from 'react'
 import useSWR, { useSWRConfig } from 'swr'
 import { useRouter } from 'next/navigation'
 import { fetcher } from '@/lib/utils'
@@ -27,15 +28,25 @@ export function useSavingsEntries(goalId: string | null) {
 
   // Revalidate everything affected by savings entry mutations:
   // this goal's entries list, the goals list (for savedAmount),
-  // the recent savings list, and the dashboard (for balance).
+  // the recent savings list, and the account balance.
   const revalidateAll = async () => {
-    await mutate()
-    await globalMutate('/api/savings-goals')
-    await globalMutate(
-      (key) =>
-        typeof key === 'string' && key.startsWith('/api/savings-entries/recent'),
-    )
-    router.refresh()
+    // Fire all SWR revalidations first and wait for them to finish so React
+    // can flush the new data into the DOM before anything else happens.
+    await Promise.all([
+      mutate(),
+      globalMutate('/api/savings-goals'),
+      globalMutate('/api/accounts/balance'),
+      globalMutate(
+        (key: unknown) =>
+          typeof key === 'string' && key.startsWith('/api/savings-entries/recent'),
+      ),
+    ])
+    // Wrap router.refresh() in startTransition so the low-priority RSC
+    // re-render (needed to update the server-rendered dashboard balance)
+    // cannot pre-empt the urgent SWR state updates above.
+    startTransition(() => {
+      router.refresh()
+    })
   }
 
   const createEntry = async (values: { amount: number; date: string }) => {

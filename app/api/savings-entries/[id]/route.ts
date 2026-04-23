@@ -70,6 +70,20 @@ export async function PUT(
       // Update the goal's savedAmount if amount changed
       if (newAmount !== oldAmount) {
         const diff = newAmount - oldAmount
+
+        // If adding more to savings (diff > 0), check the balance is sufficient
+        if (diff > 0) {
+          const [account] = await tx
+            .select({ balance: accounts.balance })
+            .from(accounts)
+            .where(eq(accounts.userId, user.userId))
+            .limit(1)
+
+          if (!account || Number(account.balance) < diff) {
+            throw new Error('Insufficient balance')
+          }
+        }
+
         await tx
           .update(savingsGoals)
           .set({
@@ -92,8 +106,11 @@ export async function PUT(
     return Response.json({ entry: updated })
   } catch (error) {
     console.error('[PUT /api/savings-entries/:id]', error)
-    
+
     if (error instanceof Error) {
+      if (error.message === 'Insufficient balance') {
+        return Response.json({ error: 'Insufficient balance to update this savings entry.' }, { status: 402 })
+      }
       if (error.message === 'Entry not found') {
         return Response.json({ error: 'Not found' }, { status: 404 })
       }

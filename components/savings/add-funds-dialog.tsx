@@ -90,7 +90,11 @@ export function AddFundsDialog({
       toast.success(`Added ${formatCurrency(Number(values.amount))} to "${goal.name}"`)
       onOpenChange(false)
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : 'Failed to add funds')
+      const message = e instanceof Error ? e.message : 'Failed to add funds'
+      // Surface the error both inline on the amount field and as a toast so it
+      // is immediately visible even if the user has scrolled past the field.
+      form.setError('amount', { type: 'server', message })
+      toast.error(message)
     }
   }
 

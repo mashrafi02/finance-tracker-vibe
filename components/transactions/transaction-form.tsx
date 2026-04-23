@@ -106,9 +106,9 @@ export function TransactionForm({
       if (!res.ok) {
         const data = await res.json()
 
-        // Budget limit exceeded — surface on both the amount field and as a toast
-        if (res.status === 409) {
-          const message = data.error ?? 'Budget exceeded for this category.'
+        // Insufficient balance — surface on the amount field and as a toast
+        if (res.status === 402) {
+          const message = data.error ?? 'Insufficient balance for this transaction.'
           form.setError('amount', { type: 'server', message })
           toast.error(message)
           return

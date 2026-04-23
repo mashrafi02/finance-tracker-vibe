@@ -1,8 +1,8 @@
 import { db } from '@/db'
-import { transactions, categories, accounts, budgets } from '@/db/schema'
+import { transactions, categories, accounts } from '@/db/schema'
 import { getAuthUser } from '@/lib/auth'
 import { updateTransactionSchema } from '@/lib/validations/transaction'
-import { eq, and, sql, sum, gte, lte, ne } from 'drizzle-orm'
+import { eq, and, sql } from 'drizzle-orm'
 
 export async function GET(
   _req: Request,
@@ -110,82 +110,63 @@ export async function PUT(
     // Resolve effective values (new values or fall back to existing)
     const effectiveType = type ?? existing.type
     const effectiveAmount = amount ?? Number(existing.amount)
-    const effectiveCategoryId = categoryId ?? existing.categoryId
-    const effectiveDate = date ? new Date(date) : existing.date
 
-    // Budget check for expenses
-    if (effectiveType === 'EXPENSE') {
-      const month = `${effectiveDate.getFullYear()}-${String(effectiveDate.getMonth() + 1).padStart(2, '0')}`
+    // Compute the net balance change caused by this edit:
+    // Revert the old effect, then apply the new effect.
+    const oldEffect = existing.type === 'INCOME' ? Number(existing.amount) : -Number(existing.amount)
+    const newEffect = effectiveType === 'INCOME' ? effectiveAmount : -effectiveAmount
+    const netBalanceChange = newEffect - oldEffect
 
-      const [budget] = await db
-        .select({ limit: budgets.limit })
-        .from(budgets)
-        .where(
-          and(
-            eq(budgets.userId, user.userId),
-            eq(budgets.categoryId, effectiveCategoryId),
-            eq(budgets.month, month),
-            eq(budgets.type, 'SPENDING')
-          )
-        )
-        .limit(1)
+    const updated = await db.transaction(async (tx) => {
+      // If the net change reduces the balance, verify sufficiency first
+      if (netBalanceChange < 0) {
+        const [account] = await tx
+          .select({ balance: accounts.balance })
+          .from(accounts)
+          .where(eq(accounts.userId, user.userId))
+          .limit(1)
 
-      if (!budget) {
-        return Response.json(
-          { error: 'Set a budget for this category before adding expenses.' },
-          { status: 409 }
-        )
+        if (!account || Number(account.balance) + netBalanceChange < 0) {
+          throw new Error('Insufficient balance')
+        }
       }
 
-      const monthStart = new Date(effectiveDate.getFullYear(), effectiveDate.getMonth(), 1)
-        const monthEnd = new Date(effectiveDate.getFullYear(), effectiveDate.getMonth() + 1, 0, 23, 59, 59)
+      // Build update object
+      const updateData: Record<string, unknown> = {}
+      if (amount !== undefined) updateData.amount = amount.toFixed(2)
+      if (type !== undefined) updateData.type = type
+      if (description !== undefined) {
+        updateData.description = note ? `${description} | ${note}` : description
+      }
+      if (date !== undefined) updateData.date = new Date(date)
+      if (categoryId !== undefined) updateData.categoryId = categoryId
 
-        // Sum existing expenses EXCLUDING the transaction being edited
-        const [spendingResult] = await db
-          .select({ total: sum(transactions.amount) })
-          .from(transactions)
-          .where(
-            and(
-              eq(transactions.userId, user.userId),
-              eq(transactions.categoryId, effectiveCategoryId),
-              eq(transactions.type, 'EXPENSE'),
-              gte(transactions.date, monthStart),
-              lte(transactions.date, monthEnd),
-              ne(transactions.id, id)
-            )
-          )
+      const [updatedTx] = await tx
+        .update(transactions)
+        .set(updateData)
+        .where(eq(transactions.id, id))
+        .returning()
 
-        const currentSpending = Number(spendingResult?.total ?? 0)
-        const budgetLimit = Number(budget.limit)
-        const newTotal = currentSpending + effectiveAmount
+      // Apply the net balance change atomically with the transaction update
+      if (netBalanceChange !== 0) {
+        await tx
+          .update(accounts)
+          .set({ balance: sql`${accounts.balance} + ${netBalanceChange}` })
+          .where(eq(accounts.userId, user.userId))
+      }
 
-        if (newTotal > budgetLimit) {
-          return Response.json(
-            { error: 'This transaction would exceed your budget for this category.' },
-            { status: 409 }
-          )
-        }
-    }
-
-    // Build update object
-    const updateData: Record<string, unknown> = {}
-    if (amount !== undefined) updateData.amount = amount.toFixed(2)
-    if (type !== undefined) updateData.type = type
-    if (description !== undefined) {
-      updateData.description = note ? `${description} | ${note}` : description
-    }
-    if (date !== undefined) updateData.date = new Date(date)
-    if (categoryId !== undefined) updateData.categoryId = categoryId
-
-    const [updated] = await db
-      .update(transactions)
-      .set(updateData)
-      .where(eq(transactions.id, id))
-      .returning()
+      return updatedTx
+    })
 
     return Response.json(updated)
   } catch (error) {
     console.error('[PUT /api/transactions/:id]', error)
+    if (error instanceof Error && error.message === 'Insufficient balance') {
+      return Response.json(
+        { error: 'Insufficient balance to complete this transaction.' },
+        { status: 402 }
+      )
+    }
     return Response.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

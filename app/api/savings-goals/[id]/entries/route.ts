@@ -89,6 +89,17 @@ export async function POST(
         throw new Error('Goal not found')
       }
 
+      // Check sufficient balance before moving funds to savings
+      const [account] = await tx
+        .select({ balance: accounts.balance })
+        .from(accounts)
+        .where(eq(accounts.userId, user.userId))
+        .limit(1)
+
+      if (!account || Number(account.balance) < result.data.amount) {
+        throw new Error('Insufficient balance')
+      }
+
       // Insert the entry
       const [newEntry] = await tx
         .insert(savingsEntries)
@@ -122,6 +133,10 @@ export async function POST(
     return Response.json({ entry }, { status: 201 })
   } catch (error) {
     console.error('[POST /api/savings-goals/:goalId/entries]', error)
+    
+    if (error instanceof Error && error.message === 'Insufficient balance') {
+      return Response.json({ error: 'Insufficient balance to add funds to savings.' }, { status: 402 })
+    }
     
     if (error instanceof Error && error.message === 'Goal not found') {
       return Response.json({ error: 'Goal not found' }, { status: 404 })
