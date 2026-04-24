@@ -850,6 +850,693 @@ Clears the `auth-token` cookie on success.
 
 ---
 
+## Accounts
+
+### `GET /api/accounts/balance`
+
+Get the current account balance for the authenticated user.
+
+**Authentication**: Required
+
+**Response `200 OK`**
+
+```json
+{
+  "balance": 1523.75
+}
+```
+
+**Note:** Balance is returned as a number. If no account exists for the user, returns `0`.
+
+**Error responses**
+
+| Status | Reason |
+|---|---|
+| `401` | Not authenticated |
+| `500` | Internal server error |
+
+---
+
+### `PUT /api/accounts/balance`
+
+Set the account balance to an explicit amount. Used for initial setup or manual corrections.
+
+**Authentication**: Required
+
+**Request body**
+
+```json
+{
+  "balance": 2000.00
+}
+```
+
+**Validation rules**
+- `balance` — must be a number >= 0
+
+**Response `200 OK`**
+
+```json
+{
+  "balance": 2000.00
+}
+```
+
+**Error responses**
+
+| Status | Reason |
+|---|---|
+| `400` | Validation failed (negative balance or invalid number) |
+| `401` | Not authenticated |
+| `500` | Internal server error |
+
+---
+
+### `POST /api/budgets/add-funds`
+
+Increase an existing budget's monthly limit by a specified amount.
+
+**Authentication**: Required
+
+**Request body**
+
+```json
+{
+  "budgetId": "550e8400-e29b-41d4-a716-446655440000",
+  "amount": 150.00
+}
+```
+
+**Validation rules**
+- `budgetId` — must be a valid UUID
+- `amount` — must be a positive number > 0
+
+**Response `200 OK`**
+
+```json
+{
+  "id": "550e8400-e29b-41d4-a716-446655440000",
+  "limit": "650.00",
+  "month": "2026-04",
+  "type": "SPENDING",
+  "categoryId": "...",
+  "userId": "..."
+}
+```
+
+**Note:** The response includes the updated budget with the new limit.
+
+**Error responses**
+
+| Status | Reason |
+|---|---|
+| `400` | Validation failed |
+| `401` | Not authenticated |
+| `403` | Budget belongs to another user |
+| `404` | Budget not found |
+| `500` | Internal server error |
+
+---
+
+## Savings Goals
+
+### `GET /api/savings-goals`
+
+Get all savings goals for the authenticated user.
+
+**Authentication**: Required
+
+**Response `200 OK`**
+
+```json
+{
+  "goals": [
+    {
+      "id": "550e8400-e29b-41d4-a716-446655440000",
+      "name": "Emergency Fund",
+      "targetAmount": "10000.00",
+      "savedAmount": "2345.50",
+      "createdAt": "2024-06-15T12:34:56.000Z",
+      "userId": "..."
+    }
+  ]
+}
+```
+
+**Note:** `targetAmount` and `savedAmount` are returned as strings from PostgreSQL's `numeric` column type.
+
+**Error responses**
+
+| Status | Reason |
+|---|---|
+| `401` | Not authenticated |
+| `500` | Internal server error |
+
+---
+
+### `POST /api/savings-goals`
+
+Create a new savings goal.
+
+**Authentication**: Required
+
+**Request body**
+
+```json
+{
+  "name": "Dream Vacation",
+  "targetAmount": 5000.00
+}
+```
+
+**Validation rules**
+- `name` — min 1 char, max 100 chars
+- `targetAmount` — positive number > 0
+
+**Response `201 Created`**
+
+```json
+{
+  "id": "550e8400-e29b-41d4-a716-446655440000",
+  "name": "Dream Vacation",
+  "targetAmount": "5000.00",
+  "savedAmount": "0",
+  "createdAt": "2024-06-15T12:34:56.000Z",
+  "userId": "..."
+}
+```
+
+**Error responses**
+
+| Status | Reason |
+|---|---|
+| `400` | Validation failed |
+| `401` | Not authenticated |
+| `500` | Internal server error |
+
+---
+
+### `PUT /api/savings-goals/[id]`
+
+Update an existing savings goal's name or target amount.
+
+**Authentication**: Required
+
+**Request body**
+
+```json
+{
+  "name": "Updated Name",
+  "targetAmount": 7500.00
+}
+```
+
+**Validation rules**
+- At least one field must be provided
+- `name` — min 1 char, max 100 chars (if provided)
+- `targetAmount` — positive number > 0 (if provided)
+
+**Response `200 OK`**
+
+```json
+{
+  "id": "550e8400-e29b-41d4-a716-446655440000",
+  "name": "Updated Name",
+  "targetAmount": "7500.00",
+  "savedAmount": "2345.50",
+  "createdAt": "2024-06-15T12:34:56.000Z",
+  "userId": "..."
+}
+```
+
+**Error responses**
+
+| Status | Reason |
+|---|---|
+| `400` | Validation failed |
+| `401` | Not authenticated |
+| `403` | Goal belongs to another user |
+| `404` | Goal not found |
+| `500` | Internal server error |
+
+---
+
+### `DELETE /api/savings-goals/[id]`
+
+Delete a savings goal and all associated entries.
+
+**Authentication**: Required
+
+**Response `200 OK`**
+
+```json
+{
+  "message": "Savings goal deleted"
+}
+```
+
+**Error responses**
+
+| Status | Reason |
+|---|---|
+| `401` | Not authenticated |
+| `403` | Goal belongs to another user |
+| `404` | Goal not found |
+| `500` | Internal server error |
+
+---
+
+### `GET /api/savings-goals/[id]/entries`
+
+Get all savings entries (contributions) for a specific goal.
+
+**Authentication**: Required
+
+**Response `200 OK`**
+
+```json
+{
+  "entries": [
+    {
+      "id": "550e8400-e29b-41d4-a716-446655440000",
+      "amount": "150.00",
+      "date": "2024-06-15T00:00:00.000Z",
+      "createdAt": "2024-06-15T12:34:56.000Z",
+      "savingsGoalId": "...",
+      "userId": "..."
+    }
+  ]
+}
+```
+
+**Error responses**
+
+| Status | Reason |
+|---|---|
+| `401` | Not authenticated |
+| `403` | Goal belongs to another user |
+| `404` | Goal not found |
+| `500` | Internal server error |
+
+---
+
+### `POST /api/savings-goals/[id]/entries`
+
+Add a contribution to a savings goal. Deducts amount from account balance.
+
+**Authentication**: Required
+
+**Request body**
+
+```json
+{
+  "amount": 200.00,
+  "date": "2024-06-15T00:00:00.000Z"
+}
+```
+
+**Validation rules**
+- `amount` — positive number > 0
+- `date` — ISO 8601 datetime string
+
+**Response `201 Created`**
+
+```json
+{
+  "id": "550e8400-e29b-41d4-a716-446655440000",
+  "amount": "200.00",
+  "date": "2024-06-15T00:00:00.000Z",
+  "createdAt": "2024-06-15T12:34:56.000Z",
+  "savingsGoalId": "...",
+  "userId": "..."
+}
+```
+
+**Note:** This endpoint:
+1. Checks if user has sufficient balance
+2. Creates the savings entry
+3. Increments the goal's `savedAmount`
+4. Decrements the user's account balance
+
+**Error responses**
+
+| Status | Reason |
+|---|---|
+| `400` | Validation failed |
+| `401` | Not authenticated |
+| `402` | Insufficient balance to add funds |
+| `403` | Goal belongs to another user |
+| `404` | Goal not found |
+| `500` | Internal server error |
+
+---
+
+### `GET /api/savings-entries/recent`
+
+Get the 5 most recent savings entries across all goals for the authenticated user.
+
+**Authentication**: Required
+
+**Response `200 OK`**
+
+```json
+{
+  "entries": [
+    {
+      "id": "550e8400-e29b-41d4-a716-446655440000",
+      "amount": "150.00",
+      "date": "2024-06-15T00:00:00.000Z",
+      "createdAt": "2024-06-15T12:34:56.000Z",
+      "goalName": "Emergency Fund"
+    }
+  ]
+}
+```
+
+**Error responses**
+
+| Status | Reason |
+|---|---|
+| `401` | Not authenticated |
+| `500` | Internal server error |
+
+---
+
+### `PUT /api/savings-entries/[id]`
+
+Update a savings entry's amount or date. Balance is automatically adjusted.
+
+**Authentication**: Required
+
+**Request body**
+
+```json
+{
+  "amount": 250.00,
+  "date": "2024-06-16T00:00:00.000Z"
+}
+```
+
+**Validation rules**
+- At least one field must be provided
+- `amount` — positive number > 0 (if provided)
+- `date` — ISO 8601 datetime string (if provided)
+
+**Response `200 OK`**
+
+```json
+{
+  "id": "550e8400-e29b-41d4-a716-446655440000",
+  "amount": "250.00",
+  "date": "2024-06-16T00:00:00.000Z",
+  "createdAt": "2024-06-15T12:34:56.000Z",
+  "savingsGoalId": "...",
+  "userId": "..."
+}
+```
+
+**Error responses**
+
+| Status | Reason |
+|---|---|
+| `400` | Validation failed |
+| `401` | Not authenticated |
+| `403` | Entry belongs to another user |
+| `404` | Entry not found |
+| `500` | Internal server error |
+
+---
+
+### `DELETE /api/savings-entries/[id]`
+
+Delete a savings entry. Refunds amount to account balance and decrements goal's `savedAmount`.
+
+**Authentication**: Required
+
+**Response `200 OK`**
+
+```json
+{
+  "message": "Savings entry deleted"
+}
+```
+
+**Error responses**
+
+| Status | Reason |
+|---|---|
+| `401` | Not authenticated |
+| `403` | Entry belongs to another user |
+| `404` | Entry not found |
+| `500` | Internal server error |
+
+---
+
+## Monthly Reports
+
+### `GET /api/reports`
+
+Get all monthly reports for the authenticated user.
+
+**Authentication**: Required
+
+**Query parameters**
+
+| Parameter | Type | Default | Description |
+|---|---|---|---|
+| `limit` | number | `12` | Max number of reports to return |
+
+**Response `200 OK`**
+
+```json
+{
+  "reports": [
+    {
+      "id": "550e8400-e29b-41d4-a716-446655440000",
+      "month": "2024-06",
+      "generatedAt": "2024-07-01T00:00:00.000Z",
+      "reportData": {
+        "totalIncome": 3500.00,
+        "totalExpense": 2100.50,
+        "netChange": 1399.50,
+        "categories": [
+          {
+            "categoryId": "...",
+            "categoryName": "Food",
+            "categoryIcon": "🛒",
+            "categoryColor": "#22c55e",
+            "totalAmount": 450.25,
+            "transactionCount": 12
+          }
+        ],
+        "topSpendingCategories": ["Food", "Transport", "Entertainment"]
+      },
+      "userId": "..."
+    }
+  ]
+}
+```
+
+**Error responses**
+
+| Status | Reason |
+|---|---|
+| `401` | Not authenticated |
+| `500` | Internal server error |
+
+---
+
+### `POST /api/reports`
+
+Generate a monthly report for a specific month.
+
+**Authentication**: Required
+
+**Request body**
+
+```json
+{
+  "month": "2024-06"
+}
+```
+
+**Validation rules**
+- `month` — format `YYYY-MM`
+
+**Response `201 Created`**
+
+```json
+{
+  "id": "550e8400-e29b-41d4-a716-446655440000",
+  "month": "2024-06",
+  "generatedAt": "2024-07-01T00:00:00.000Z",
+  "reportData": { ... },
+  "userId": "..."
+}
+```
+
+**Note:** If a report already exists for this month, returns the existing report with `200 OK`.
+
+**Error responses**
+
+| Status | Reason |
+|---|---|
+| `400` | Validation failed (invalid month format) |
+| `401` | Not authenticated |
+| `500` | Internal server error |
+
+---
+
+### `GET /api/reports/[id]`
+
+Get a specific monthly report by ID.
+
+**Authentication**: Required
+
+**Response `200 OK`**
+
+```json
+{
+  "id": "550e8400-e29b-41d4-a716-446655440000",
+  "month": "2024-06",
+  "generatedAt": "2024-07-01T00:00:00.000Z",
+  "reportData": { ... },
+  "userId": "..."
+}
+```
+
+**Error responses**
+
+| Status | Reason |
+|---|---|
+| `401` | Not authenticated |
+| `403` | Report belongs to another user |
+| `404` | Report not found |
+| `500` | Internal server error |
+
+---
+
+### `DELETE /api/reports/[id]`
+
+Delete a monthly report.
+
+**Authentication**: Required
+
+**Response `200 OK`**
+
+```json
+{
+  "message": "Report deleted"
+}
+```
+
+**Error responses**
+
+| Status | Reason |
+|---|---|
+| `401` | Not authenticated |
+| `403` | Report belongs to another user |
+| `404` | Report not found |
+| `500` | Internal server error |
+
+---
+
+## Profile Management
+
+### `PUT /api/profile/password`
+
+Change the authenticated user's password.
+
+**Authentication**: Required
+
+**Request body**
+
+```json
+{
+  "currentPassword": "OldPass123",
+  "newPassword": "NewPass456"
+}
+```
+
+**Validation rules**
+- `currentPassword` — min 1 char
+- `newPassword` — min 8 chars, at least one uppercase letter, at least one number
+
+**Response `200 OK`**
+
+```json
+{
+  "message": "Password updated successfully"
+}
+```
+
+**Error responses**
+
+| Status | Reason |
+|---|---|
+| `400` | Validation failed or current password incorrect |
+| `401` | Not authenticated |
+| `500` | Internal server error |
+
+---
+
+### `POST /api/profile/image`
+
+Upload a profile image to Cloudinary and update the user's `imageUrl`.
+
+**Authentication**: Required
+
+**Request body** (multipart/form-data)
+
+```
+image: <file>
+```
+
+**Validation rules**
+- File must be an image (JPEG, PNG, GIF, WebP)
+- Max file size varies by Cloudinary plan (typically 10MB)
+
+**Response `200 OK`**
+
+```json
+{
+  "imageUrl": "https://res.cloudinary.com/.../profile_image.jpg"
+}
+```
+
+**Error responses**
+
+| Status | Reason |
+|---|---|
+| `400` | No image file provided or invalid format |
+| `401` | Not authenticated |
+| `500` | Upload failed or Cloudinary error |
+
+---
+
+### `DELETE /api/profile/image`
+
+Remove the user's profile image (sets `imageUrl` to null).
+
+**Authentication**: Required
+
+**Response `200 OK`**
+
+```json
+{
+  "message": "Profile image removed"
+}
+```
+
+**Error responses**
+
+| Status | Reason |
+|---|---|
+| `401` | Not authenticated |
+| `500` | Internal server error |
+
+---
+
 ## Error response format
 
 All error responses follow this structure:
