@@ -31,6 +31,7 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Loader2, Pencil } from 'lucide-react'
 import { useSavingsEntries, type SavingsEntry } from '@/hooks/use-savings-entries'
+import { useCurrency } from '@/contexts/currency-context'
 
 const editEntrySchema = z.object({
   amount: z
@@ -59,6 +60,7 @@ export function EditEntryDialog({
   onOpenChange,
 }: EditEntryDialogProps) {
   const { updateEntry } = useSavingsEntries(goalId)
+  const { currencySymbol } = useCurrency()
 
   const form = useForm<EditEntryValues>({
     resolver: zodResolver(editEntrySchema),
@@ -121,7 +123,7 @@ export function EditEntryDialog({
                   <FormControl>
                     <InputGroup>
                       <InputGroupAddon align="inline-start">
-                        <InputGroupText>$</InputGroupText>
+                        <InputGroupText>{currencySymbol}</InputGroupText>
                       </InputGroupAddon>
                       <InputGroupInput
                         type="number"

@@ -57,7 +57,7 @@ export function AddFundsDialog({
   open,
   onOpenChange,
 }: AddFundsDialogProps) {
-  const { formatCurrency } = useCurrency()
+  const { formatCurrency, currencySymbol } = useCurrency()
   const { addFundsToBudget } = useBudgets(month)
 
   const form = useForm<AddFundsFormValues>({
@@ -146,7 +146,7 @@ export function AddFundsDialog({
                   <FormControl>
                     <InputGroup className="h-10 rounded-xl">
                       <InputGroupAddon>
-                        <InputGroupText className="text-foreground">$</InputGroupText>
+                        <InputGroupText className="text-foreground">{currencySymbol}</InputGroupText>
                       </InputGroupAddon>
                       <InputGroupInput
                         type="number"

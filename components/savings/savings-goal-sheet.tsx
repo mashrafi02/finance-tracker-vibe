@@ -57,7 +57,7 @@ export function SavingsGoalSheet({
   onOpenChange,
   goal,
 }: SavingsGoalSheetProps) {
-  const { formatCurrency } = useCurrency()
+  const { formatCurrency, currencySymbol } = useCurrency()
   const isEditing = Boolean(goal)
   const { createGoal, updateGoal } = useSavingsGoals()
 
@@ -157,7 +157,7 @@ export function SavingsGoalSheet({
                   <FormControl>
                     <InputGroup>
                       <InputGroupAddon align="inline-start">
-                        <InputGroupText>$</InputGroupText>
+                        <InputGroupText>{currencySymbol}</InputGroupText>
                       </InputGroupAddon>
                       <InputGroupInput
                         type="number"

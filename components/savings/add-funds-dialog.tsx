@@ -34,6 +34,7 @@ import { Loader2, Wallet } from 'lucide-react'
 import { useSavingsEntries } from '@/hooks/use-savings-entries'
 import type { SavingsGoal } from '@/hooks/use-savings-goals'
 import { useCurrency } from '@/contexts/currency-context'
+import { useBalance } from '@/hooks/use-balance'
 
 const addFundsSchema = z.object({
   amount: z
@@ -59,7 +60,8 @@ export function AddFundsDialog({
   open,
   onOpenChange,
 }: AddFundsDialogProps) {
-  const { formatCurrency } = useCurrency()
+  const { formatCurrency, currencySymbol } = useCurrency()
+  const { balance } = useBalance()
   const { createEntry } = useSavingsEntries(goal?.id ?? null)
 
   const form = useForm<AddFundsValues>({
@@ -90,7 +92,11 @@ export function AddFundsDialog({
       toast.success(`Added ${formatCurrency(Number(values.amount))} to "${goal.name}"`)
       onOpenChange(false)
     } catch (e) {
-      const message = e instanceof Error ? e.message : 'Failed to add funds'
+      let message = e instanceof Error ? e.message : 'Failed to add funds'
+      // If it's an insufficient balance error, enhance the message with current balance
+      if (message.toLowerCase().includes('insufficient')) {
+        message = `Insufficient balance to add funds. You have ${formatCurrency(balance)} available.`
+      }
       // Surface the error both inline on the amount field and as a toast so it
       // is immediately visible even if the user has scrolled past the field.
       form.setError('amount', { type: 'server', message })
@@ -137,7 +143,7 @@ export function AddFundsDialog({
                   <FormControl>
                     <InputGroup>
                       <InputGroupAddon align="inline-start">
-                        <InputGroupText>$</InputGroupText>
+                        <InputGroupText>{currencySymbol}</InputGroupText>
                       </InputGroupAddon>
                       <InputGroupInput
                         type="number"

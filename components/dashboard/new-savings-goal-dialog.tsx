@@ -58,7 +58,7 @@ export function NewSavingsGoalDialog({
   open,
   onOpenChange,
 }: NewSavingsGoalDialogProps) {
-  const { formatCurrency } = useCurrency()
+  const { formatCurrency, currencySymbol } = useCurrency()
   const { createGoal } = useSavingsGoals()
 
   const form = useForm<CreateGoalValues>({
@@ -131,7 +131,7 @@ export function NewSavingsGoalDialog({
                   <FormControl>
                     <InputGroup>
                       <InputGroupAddon align="inline-start">
-                        <InputGroupText>$</InputGroupText>
+                        <InputGroupText>{currencySymbol}</InputGroupText>
                       </InputGroupAddon>
                       <InputGroupInput
                         type="number"

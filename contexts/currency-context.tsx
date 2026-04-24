@@ -14,16 +14,22 @@ export type Currency = 'USD' | 'BDT'
 
 const STORAGE_KEY = 'finance-tracker:currency'
 
+const CURRENCY_SYMBOLS: Record<Currency, string> = {
+  USD: '$',
+  BDT: '৳',
+}
+
 interface CurrencyContextValue {
   currency: Currency
   setCurrency: (c: Currency) => void
   formatCurrency: (amount: number | string) => string
+  currencySymbol: string
 }
 
 const CurrencyContext = createContext<CurrencyContextValue | null>(null)
 
 export function CurrencyProvider({ children }: { children: React.ReactNode }) {
-  const [currency, setCurrencyState] = useState<Currency>('USD')
+  const [currency, setCurrencyState] = useState<Currency>('BDT')
 
   // Read localStorage after mount to avoid SSR hydration mismatch.
   // setState is intentional here — we start with the server-safe default
@@ -50,7 +56,7 @@ export function CurrencyProvider({ children }: { children: React.ReactNode }) {
   // consumer of useCurrency() to re-render, even if the currency didn't
   // change.
   const value = useMemo(
-    () => ({ currency, setCurrency, formatCurrency }),
+    () => ({ currency, setCurrency, formatCurrency, currencySymbol: CURRENCY_SYMBOLS[currency] }),
     [currency, setCurrency, formatCurrency],
   )
 

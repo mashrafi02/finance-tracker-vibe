@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -28,6 +29,10 @@ import {
 import { ArrowDownRight, ArrowUpRight, Loader2 } from 'lucide-react'
 import type { Category } from '@/db/schema'
 import type { TransactionWithCategory } from '@/hooks/use-transactions'
+import { useCurrency } from '@/contexts/currency-context'
+import { useBudgets } from '@/hooks/use-budgets'
+import { useBalance } from '@/hooks/use-balance'
+import { OverBudgetWarningDialog } from './over-budget-warning-dialog'
 
 const transactionFormSchema = z.object({
   amount: z.string().min(1, 'Amount is required').refine(
@@ -59,6 +64,10 @@ export function TransactionForm({
   const isEditing = Boolean(transaction)
   const { mutate: globalMutate } = useSWRConfig()
   const router = useRouter()
+  const { currencySymbol, formatCurrency } = useCurrency()
+  const { balance } = useBalance()
+
+  const [pendingValues, setPendingValues] = useState<TransactionFormValues | null>(null)
 
   // Parse note from description if editing (note is stored as "description | note")
   const parseDescriptionAndNote = (desc: string) => {
@@ -87,57 +96,121 @@ export function TransactionForm({
     },
   })
 
+  // Watch the date field so we can load budgets for the correct month.
+  const watchedDate = form.watch('date')
+  const budgetMonth = watchedDate
+    ? watchedDate.slice(0, 7)      // "YYYY-MM"
+    : new Date().toISOString().slice(0, 7)
+  const { spendingBudgets } = useBudgets(budgetMonth)
+
+  // ── API call (shared by direct submit and confirmed over-budget submit) ──
+  async function saveTransaction(values: TransactionFormValues) {
+    const url = isEditing
+      ? `/api/transactions/${transaction!.id}`
+      : '/api/transactions'
+    const method = isEditing ? 'PUT' : 'POST'
+
+    const res = await fetch(url, {
+      method,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...values, amount: Number(values.amount) }),
+    })
+
+    if (!res.ok) {
+      const data = await res.json()
+      if (res.status === 402) {
+        // Always enhance insufficient balance errors with current balance
+        const message = `Insufficient balance for this transaction. You only have ${formatCurrency(balance)} available.`
+        form.setError('amount', { type: 'server', message })
+        toast.error(message)
+        return false
+      }
+      toast.error(data.error ?? 'Something went wrong')
+      return false
+    }
+
+    toast.success(isEditing ? 'Transaction updated' : 'Transaction added')
+    globalMutate(
+      (key) =>
+        typeof key === 'string' &&
+        (key.startsWith('/api/budgets') ||
+          key.startsWith('/api/summary') ||
+          key.startsWith('/api/analytics') ||
+          key.startsWith('/api/transactions')),
+    )
+    router.refresh()
+    onSuccess()
+    return true
+  }
+
   async function onSubmit(values: TransactionFormValues) {
-    try {
-      const url = isEditing
-        ? `/api/transactions/${transaction!.id}`
-        : '/api/transactions'
-      const method = isEditing ? 'PUT' : 'POST'
+    // Only expense transactions are subject to budget checks.
+    if (values.type === 'EXPENSE') {
+      const budget = spendingBudgets.find((b) => b.categoryId === values.categoryId)
 
-      const res = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...values,
-          amount: Number(values.amount),
-        }),
-      })
+      if (budget && budget.limit !== null) {
+        // When editing, exclude the original amount so we don't double-count it.
+        const originalAmount = isEditing ? Number(transaction!.amount) : 0
+        const effectiveSpent = budget.spent - originalAmount
+        const projectedSpent = effectiveSpent + Number(values.amount)
 
-      if (!res.ok) {
-        const data = await res.json()
-
-        // Insufficient balance — surface on the amount field and as a toast
-        if (res.status === 402) {
-          const message = data.error ?? 'Insufficient balance for this transaction.'
-          form.setError('amount', { type: 'server', message })
-          toast.error(message)
+        if (projectedSpent > budget.limit) {
+          // Store values and open the warning dialog — do NOT call the API yet.
+          setPendingValues(values)
           return
         }
-
-        toast.error(data.error ?? 'Something went wrong')
-        return
       }
+    }
 
-      toast.success(isEditing ? 'Transaction updated' : 'Transaction added')
-      // Revalidate all derived caches that depend on transactions
-      globalMutate(
-        (key) =>
-          typeof key === 'string' &&
-          (key.startsWith('/api/budgets') ||
-            key.startsWith('/api/summary') ||
-            key.startsWith('/api/analytics') ||
-            key.startsWith('/api/transactions')),
-      )
-      router.refresh()
-      onSuccess()
+    try {
+      await saveTransaction(values)
     } catch {
       toast.error('Failed to save. Please try again.')
     }
   }
 
+  // Called when user clicks "Proceed anyway" in the warning dialog.
+  async function handleConfirmOverBudget() {
+    if (!pendingValues) return
+    setPendingValues(null)
+    try {
+      await saveTransaction(pendingValues)
+    } catch {
+      toast.error('Failed to save. Please try again.')
+    }
+  }
+
+  // Compute dialog props from pendingValues (safe to derive because the dialog
+  // is only shown while pendingValues is non-null).
+  const warningDialogProps = (() => {
+    if (!pendingValues) return null
+    const budget = spendingBudgets.find((b) => b.categoryId === pendingValues.categoryId)
+    if (!budget || budget.limit === null) return null
+    const originalAmount = isEditing ? Number(transaction!.amount) : 0
+    const effectiveSpent = budget.spent - originalAmount
+    return {
+      categoryName: budget.categoryName,
+      categoryIcon: budget.categoryIcon,
+      limit: budget.limit,
+      effectiveSpent,
+      newAmount: Number(pendingValues.amount),
+    }
+  })()
+
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
+    <>
+      {warningDialogProps && (
+        <OverBudgetWarningDialog
+          open={Boolean(pendingValues)}
+          onConfirm={handleConfirmOverBudget}
+          onCancel={() => setPendingValues(null)}
+          formatCurrency={(n) => formatCurrency(n)}
+          {...warningDialogProps}
+        />
+      )}
+
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
         <div className="grid gap-5 sm:grid-cols-2">
           <FormField
             control={form.control}
@@ -178,7 +251,7 @@ export function TransactionForm({
                 <FormControl>
                   <InputGroup className="h-10 rounded-xl">
                     <InputGroupAddon>
-                      <InputGroupText className="text-foreground">$</InputGroupText>
+                      <InputGroupText className="text-foreground">{currencySymbol}</InputGroupText>
                     </InputGroupAddon>
                     <InputGroupInput
                       type="number"
@@ -201,29 +274,39 @@ export function TransactionForm({
           <FormField
             control={form.control}
             name="categoryId"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Category</FormLabel>
-                <Select onValueChange={field.onChange} value={field.value ?? ''}>
-                  <FormControl>
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Select a category" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {categories.map((cat) => (
-                      <SelectItem key={cat.id} value={cat.id}>
-                        <span className="flex items-center gap-2">
-                          <span>{cat.icon}</span>
-                          <span>{cat.name}</span>
-                        </span>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
+            render={({ field }) => {
+              const selectedCat = categories.find((c) => c.id === field.value)
+              return (
+                <FormItem>
+                  <FormLabel>Category</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value ?? ''}>
+                    <FormControl>
+                      <SelectTrigger className="w-full">
+                        {selectedCat ? (
+                          <span className="flex items-center gap-2">
+                            <span>{selectedCat.icon}</span>
+                            <span>{selectedCat.name}</span>
+                          </span>
+                        ) : (
+                          <SelectValue placeholder="Select a category" />
+                        )}
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {categories.map((cat) => (
+                        <SelectItem key={cat.id} value={cat.id}>
+                          <span className="flex items-center gap-2">
+                            <span>{cat.icon}</span>
+                            <span>{cat.name}</span>
+                          </span>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )
+            }}
           />
 
           <FormField
@@ -287,6 +370,7 @@ export function TransactionForm({
           </Button>
         </div>
       </form>
-    </Form>
+      </Form>
+    </>
   )
 }

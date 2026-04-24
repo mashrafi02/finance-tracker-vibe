@@ -56,7 +56,7 @@ export function UpdateBalanceDialog({
   onOpenChange,
   currentBalance,
 }: UpdateBalanceDialogProps) {
-  const { formatCurrency } = useCurrency()
+  const { formatCurrency, currencySymbol } = useCurrency()
   const { updateBalance } = useBalance()
 
   const form = useForm<UpdateBalanceFormValues>({
@@ -114,7 +114,7 @@ export function UpdateBalanceDialog({
                   <FormControl>
                     <InputGroup>
                       <InputGroupAddon>
-                        <InputGroupText>$</InputGroupText>
+                        <InputGroupText>{currencySymbol}</InputGroupText>
                       </InputGroupAddon>
                       <InputGroupInput
                         {...field}

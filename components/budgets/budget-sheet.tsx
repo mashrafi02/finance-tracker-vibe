@@ -80,7 +80,7 @@ export function BudgetSheet({
   budget,
   defaultType = 'SPENDING',
 }: BudgetSheetProps) {
-  const { formatCurrency } = useCurrency()
+  const { formatCurrency, currencySymbol } = useCurrency()
   // Treat as "edit" only when an existing budgetId is present.
   // A passed-in budget without budgetId is treated as a prefilled "create".
   const isEditing = Boolean(budget?.budgetId)
@@ -249,47 +249,65 @@ export function BudgetSheet({
             <FormField
               control={form.control}
               name="categoryId"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Category</FormLabel>
-                  <FormControl>
-                    <Select
-                      value={field.value}
-                      onValueChange={field.onChange}
-                      disabled={isEditing}
-                    >
-                      <SelectTrigger className="h-10 w-full">
-                        <SelectValue placeholder="Choose a category" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {availableOptions.length === 0 ? (
-                          <div className="px-3 py-6 text-center text-xs text-muted-foreground">
-                            All categories already have a {isIncome ? 'goal' : 'budget'}.
-                          </div>
-                        ) : (
-                          availableOptions.map((opt) => (
-                            <SelectItem key={opt.value} value={opt.value}>
-                              <span className="flex items-center gap-2">
-                                <span
-                                  className="inline-flex h-5 w-5 items-center justify-center rounded-md text-[11px]"
-                                  style={{
-                                    backgroundColor: `${opt.color}1F`,
-                                    color: opt.color,
-                                  }}
-                                >
-                                  {opt.icon}
-                                </span>
-                                {opt.label}
+              render={({ field }) => {
+                const selectedOpt = availableOptions.find((o) => o.value === field.value)
+                return (
+                  <FormItem>
+                    <FormLabel>Category</FormLabel>
+                    <FormControl>
+                      <Select
+                        value={field.value}
+                        onValueChange={field.onChange}
+                        disabled={isEditing}
+                      >
+                        <SelectTrigger className="h-10 w-full">
+                          {selectedOpt ? (
+                            <span className="flex items-center gap-2">
+                              <span
+                                className="inline-flex h-5 w-5 items-center justify-center rounded-md text-[11px]"
+                                style={{
+                                  backgroundColor: `${selectedOpt.color}1F`,
+                                  color: selectedOpt.color,
+                                }}
+                              >
+                                {selectedOpt.icon}
                               </span>
-                            </SelectItem>
-                          ))
-                        )}
-                      </SelectContent>
-                    </Select>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
+                              {selectedOpt.label}
+                            </span>
+                          ) : (
+                            <SelectValue placeholder="Choose a category" />
+                          )}
+                        </SelectTrigger>
+                        <SelectContent>
+                          {availableOptions.length === 0 ? (
+                            <div className="px-3 py-6 text-center text-xs text-muted-foreground">
+                              All categories already have a {isIncome ? 'goal' : 'budget'}.
+                            </div>
+                          ) : (
+                            availableOptions.map((opt) => (
+                              <SelectItem key={opt.value} value={opt.value}>
+                                <span className="flex items-center gap-2">
+                                  <span
+                                    className="inline-flex h-5 w-5 items-center justify-center rounded-md text-[11px]"
+                                    style={{
+                                      backgroundColor: `${opt.color}1F`,
+                                      color: opt.color,
+                                    }}
+                                  >
+                                    {opt.icon}
+                                  </span>
+                                  {opt.label}
+                                </span>
+                              </SelectItem>
+                            ))
+                          )}
+                        </SelectContent>
+                      </Select>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )
+              }}
             />
 
             {/* Limit */}
@@ -302,7 +320,7 @@ export function BudgetSheet({
                   <FormControl>
                     <InputGroup className="h-10 rounded-xl">
                       <InputGroupAddon align="inline-start">
-                        <InputGroupText>$</InputGroupText>
+                        <InputGroupText>{currencySymbol}</InputGroupText>
                       </InputGroupAddon>
                       <InputGroupInput
                         type="number"
