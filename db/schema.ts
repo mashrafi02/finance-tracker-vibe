@@ -123,6 +123,19 @@ export const monthlyReports = pgTable('monthly_reports', {
   index('monthly_reports_user_id_idx').on(t.userId),
 ])
 
+export const passwordResetTokens = pgTable('password_reset_tokens', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  token: text('token').notNull().unique(),
+  expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+  userId: text('user_id')
+    .notNull()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+}, (t) => [
+  index('password_reset_tokens_user_id_idx').on(t.userId),
+  index('password_reset_tokens_token_idx').on(t.token),
+])
+
 // Inferred types — import these in API routes and components
 export type User = typeof users.$inferSelect
 export type NewUser = typeof users.$inferInsert
@@ -140,3 +153,5 @@ export type SavingsEntry = typeof savingsEntries.$inferSelect
 export type NewSavingsEntry = typeof savingsEntries.$inferInsert
 export type MonthlyReport = typeof monthlyReports.$inferSelect
 export type NewMonthlyReport = typeof monthlyReports.$inferInsert
+export type PasswordResetToken = typeof passwordResetTokens.$inferSelect
+export type NewPasswordResetToken = typeof passwordResetTokens.$inferInsert

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Poppins } from "next/font/google";
 import { Toaster } from "sonner";
+import Script from "next/script";
 import "./globals.css";
 import { ThemeProvider, themeInitScript } from "@/components/theme/theme-provider";
 import { CurrencyProvider } from "@/contexts/currency-context";
@@ -27,7 +28,11 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${poppins.variable} h-full antialiased`} suppressHydrationWarning>
       <head>
-        <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
+        <Script
+          id="theme-init"
+          strategy="beforeInteractive"
+          dangerouslySetInnerHTML={{ __html: themeInitScript }}
+        />
       </head>
       <body className={`${poppins.className} min-h-full flex flex-col`}>
         <ThemeProvider>

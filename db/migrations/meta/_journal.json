@@ -50,6 +50,13 @@
       "when": 1776922446174,
       "tag": "0006_puzzling_reavers",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1777040348682,
+      "tag": "0007_tranquil_mongoose",
+      "breakpoints": true
     }
   ]
 }
