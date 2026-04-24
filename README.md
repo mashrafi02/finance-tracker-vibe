@@ -37,6 +37,7 @@
 ### Security & Authentication
 - **Custom JWT authentication** — secure email/password auth with httpOnly cookies
 - **Protected routes** — middleware-enforced authentication for all dashboard pages
+- **Password recovery** — send a reset link by email and set a new password with a time-limited token
 - **Profile management** — update name, username, bio, profile image, and password
 - **Account deletion** — permanent account removal with confirmation dialog
 
@@ -47,6 +48,7 @@
 | Framework | Next.js 16.2.4 (App Router, TypeScript, React 19) |
 | Styling | Tailwind CSS v4 + Shadcn UI (base-nova style) |
 | Authentication | Custom JWT (`jose`) stored in httpOnly cookies |
+| Email delivery | Nodemailer with Gmail App Password credentials |
 | Password Hashing | bcryptjs (12 rounds) |
 | ORM | Drizzle ORM 0.45 |
 | Database | PostgreSQL |
@@ -105,11 +107,16 @@ Create a `.env` file in the project root with the following variables:
 |---|---|---|
 | `DATABASE_URL` | Yes | PostgreSQL connection string |
 | `JWT_SECRET` | Yes | Secret key for signing JWTs — minimum 32 characters |
+| `NEXT_PUBLIC_APP_URL` | No | Base app URL used to build password reset links in emails |
 | `CLOUDINARY_CLOUD_NAME` | No | Cloudinary cloud name for profile image uploads |
 | `CLOUDINARY_API_KEY` | No | Cloudinary API key |
 | `CLOUDINARY_API_SECRET` | No | Cloudinary API secret |
+| `GMAIL_APP_USER` | Yes | Gmail address used to send password reset emails |
+| `GMAIL_APP_PASSWORD` | Yes | Gmail App Password used by Nodemailer |
 
 **Note:** Cloudinary credentials are optional. Profile images will still work without them, using a default avatar.
+
+**Note:** `GMAIL_APP_USER` and `GMAIL_APP_PASSWORD` are required for password reset emails. Set `NEXT_PUBLIC_APP_URL` to your deployed app URL in production so email links point to the right domain.
 
 Generate a secure `JWT_SECRET`:
 ```bash
@@ -155,6 +162,7 @@ Authentication uses **custom JWT** — no NextAuth or third-party auth library.
 - Tokens are stored in an `httpOnly`, `Secure`, `SameSite=Strict` cookie
 - All dashboard routes and data API routes are protected by [middleware.ts](middleware.ts)
 - The user's identity in API routes always comes from the verified JWT payload — never from request parameters
+- Password recovery uses single-use reset tokens sent by email and expires after 1 hour
 
 ## Key workflows
 
@@ -194,9 +202,11 @@ See [docs/api.md](./docs/api.md) for the full REST API documentation.
 
 ```
 ├── app/
-│   ├── (auth)/              # Login and register pages (public)
+│   ├── (auth)/              # Login, register, forgot/reset password pages (public)
 │   │   ├── login/
-│   │   └── register/
+│   │   ├── register/
+│   │   ├── forgot-password/
+│   │   └── reset-password/
 │   ├── (dashboard)/         # Protected dashboard pages and layouts
 │   │   ├── page.tsx         # Main dashboard
 │   │   ├── transactions/
@@ -230,7 +240,7 @@ See [docs/api.md](./docs/api.md) for the full REST API documentation.
 │   ├── analytics/           # Analytics page client components, stat cards, charts
 │   ├── layout/              # Sidebar nav, header, mobile nav, currency switcher
 │   ├── profile/             # Profile forms (name, password, image, delete account)
-│   ├── auth/                # Login/register forms, logout button
+│   ├── auth/                # Login/register/forgot/reset forms, logout button
 │   ├── theme/               # Theme provider and toggle
 │   ├── command-menu.tsx     # Global keyboard command menu (⌘K)
 │   └── command-menu-dialog.tsx
@@ -264,6 +274,8 @@ See [docs/api.md](./docs/api.md) for the full REST API documentation.
 | `/profile` | **Profile settings** — update account info (name, username, bio, image); change password; delete account with confirmation |
 | `/login` | Public login page with email/password authentication |
 | `/register` | Public registration page with validation and automatic account creation |
+| `/forgot-password` | Public password recovery page that sends a reset link by email |
+| `/reset-password` | Public password reset page that accepts a token from the email link |
 
 ## Running tests
 
